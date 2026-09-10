@@ -371,6 +371,9 @@ namespace MailClient.Infrastructure.Migrations
                     b.Property<Guid>("MailFolderId")
                         .HasColumnType("uuid");
 
+                    b.Property<long>("NextUidScanStart")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("UidValidity")
                         .HasColumnType("bigint");
 
