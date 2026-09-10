@@ -276,6 +276,52 @@ namespace MailClient.Infrastructure.Migrations
                     b.ToTable("MailFolders");
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.SendOperation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("SentCopySaved")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Warning")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("SendOperations");
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.SyncSkippedUid", b =>
                 {
                     b.Property<Guid>("Id")
@@ -438,6 +484,17 @@ namespace MailClient.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("MailAccount");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.SendOperation", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.SyncSkippedUid", b =>
