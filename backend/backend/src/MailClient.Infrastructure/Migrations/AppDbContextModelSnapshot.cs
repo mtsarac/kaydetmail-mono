@@ -276,6 +276,34 @@ namespace MailClient.Infrastructure.Migrations
                     b.ToTable("MailFolders");
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.SyncSkippedUid", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MailFolderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("SkippedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Uid")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailFolderId", "Uid")
+                        .IsUnique();
+
+                    b.ToTable("SyncSkippedUids");
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.SyncState", b =>
                 {
                     b.Property<Guid>("Id")
@@ -410,6 +438,17 @@ namespace MailClient.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("MailAccount");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.SyncSkippedUid", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailFolder", "MailFolder")
+                        .WithMany()
+                        .HasForeignKey("MailFolderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MailFolder");
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.SyncState", b =>
