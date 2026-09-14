@@ -468,6 +468,8 @@ namespace MailClient.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MailAccountId");
+
                     b.HasIndex("MailFolderId", "Uid")
                         .IsUnique();
 
@@ -503,6 +505,8 @@ namespace MailClient.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MailAccountId");
+
                     b.HasIndex("MailFolderId")
                         .IsUnique();
 
@@ -511,6 +515,12 @@ namespace MailClient.Infrastructure.Migrations
 
             modelBuilder.Entity("MailClient.Domain.Entities.Attachment", b =>
                 {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MailClient.Domain.Entities.Mail", "Mail")
                         .WithMany("Attachments")
                         .HasForeignKey("MailId")
@@ -518,6 +528,23 @@ namespace MailClient.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Mail");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.AuditLog", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.DeviceToken", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.Mail", b =>
@@ -572,8 +599,38 @@ namespace MailClient.Infrastructure.Migrations
                     b.Navigation("MailAccount");
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.SendOperation", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.SyncSkippedUid", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MailClient.Domain.Entities.MailFolder", null)
+                        .WithMany()
+                        .HasForeignKey("MailFolderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.SyncState", b =>
                 {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MailClient.Domain.Entities.MailFolder", "MailFolder")
                         .WithOne("SyncState")
                         .HasForeignKey("MailClient.Domain.Entities.SyncState", "MailFolderId")
