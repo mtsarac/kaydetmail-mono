@@ -17,7 +17,7 @@ namespace MailClient.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -62,6 +62,46 @@ namespace MailClient.Infrastructure.Migrations
                     b.HasIndex("MailId");
 
                     b.ToTable("Attachments");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("EntityId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("TimestampUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "TimestampUtc");
+
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.DeviceToken", b =>
@@ -438,6 +478,16 @@ namespace MailClient.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Mail");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.AuditLog", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.DeviceToken", b =>
