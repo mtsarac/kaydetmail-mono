@@ -28,6 +28,11 @@ namespace MailClient.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ContentDisposition")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("ContentId")
                         .IsRequired()
                         .HasMaxLength(998)
@@ -144,6 +149,9 @@ namespace MailClient.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("Answered")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("BodyHtml")
                         .IsRequired()
                         .HasColumnType("text");
@@ -151,6 +159,15 @@ namespace MailClient.Infrastructure.Migrations
                     b.Property<string>("BodyText")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("Draft")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("Flagged")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("FromAddress")
                         .IsRequired()
@@ -164,6 +181,14 @@ namespace MailClient.Infrastructure.Migrations
 
                     b.Property<bool>("HasAttachments")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("InReplyToMessageId")
+                        .IsRequired()
+                        .HasMaxLength(998)
+                        .HasColumnType("character varying(998)");
+
+                    b.Property<DateTime>("InternalDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
@@ -180,6 +205,17 @@ namespace MailClient.Infrastructure.Migrations
                         .HasColumnType("character varying(998)");
 
                     b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Recent")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("References")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<DateTime>("SentAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Subject")
@@ -201,6 +237,8 @@ namespace MailClient.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("MailAccountId");
+
+                    b.HasIndex("MessageId");
 
                     b.HasIndex("MailFolderId", "Uid")
                         .IsUnique();
@@ -361,6 +399,69 @@ namespace MailClient.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("MailFolders");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.MailHeader", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MailId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(998)
+                        .HasColumnType("character varying(998)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailId", "Name");
+
+                    b.ToTable("MailHeader");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.MailParticipant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<Guid>("MailId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NormalizedAddress")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailId", "Type", "SortOrder");
+
+                    b.ToTable("MailParticipant");
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.MailSession", b =>
@@ -588,6 +689,24 @@ namespace MailClient.Infrastructure.Migrations
                     b.Navigation("MailAccount");
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.MailHeader", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.Mail", null)
+                        .WithMany("Headers")
+                        .HasForeignKey("MailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.MailParticipant", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.Mail", null)
+                        .WithMany("Participants")
+                        .HasForeignKey("MailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.MailSession", b =>
                 {
                     b.HasOne("MailClient.Domain.Entities.MailAccount", "MailAccount")
@@ -643,6 +762,10 @@ namespace MailClient.Infrastructure.Migrations
             modelBuilder.Entity("MailClient.Domain.Entities.Mail", b =>
                 {
                     b.Navigation("Attachments");
+
+                    b.Navigation("Headers");
+
+                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.MailAccount", b =>
