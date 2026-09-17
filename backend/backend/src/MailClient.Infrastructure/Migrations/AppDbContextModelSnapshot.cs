@@ -699,8 +699,14 @@ namespace MailClient.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<long>("BackfillNextUid")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("ConsecutiveFailures")
                         .HasColumnType("integer");
+
+                    b.Property<long>("FlagScanCursorUid")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime?>("LastErrorNotifiedAt")
                         .HasColumnType("timestamp with time zone");
