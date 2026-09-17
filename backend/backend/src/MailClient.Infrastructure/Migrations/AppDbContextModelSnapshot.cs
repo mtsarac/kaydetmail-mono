@@ -562,6 +562,55 @@ namespace MailClient.Infrastructure.Migrations
                     b.ToTable("MailSessions");
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.OAuthStateNonce", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NonceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NonceHash")
+                        .IsUnique();
+
+                    b.ToTable("OAuthStateNonces");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.RuntimeConfiguration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SettingsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RuntimeConfigurations");
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.SendOperation", b =>
                 {
                     b.Property<Guid>("Id")
