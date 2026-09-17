@@ -699,10 +699,25 @@ namespace MailClient.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("ConsecutiveFailures")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("LastErrorNotifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastFailureAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("LastFailureCategory")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("LastFlagSyncAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("LastNewMailSyncAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastSuccessfulSyncAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("LastUid")
@@ -713,6 +728,9 @@ namespace MailClient.Infrastructure.Migrations
 
                     b.Property<Guid>("MailFolderId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("NextRetryAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("NextUidScanStart")
                         .HasColumnType("bigint");
