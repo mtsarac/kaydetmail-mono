@@ -651,6 +651,108 @@ namespace MailClient.Infrastructure.Migrations
                     b.ToTable("RuntimeConfigurations");
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.ScheduledSend", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BccAddressesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BodyHtml")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BodyText")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CcAddressesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("MailAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ReplySourceMailId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("SendAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SentMailId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ToAddressesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailAccountId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "SendAtUtc");
+
+                    b.ToTable("ScheduledSends");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.ScheduledSendAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("ScheduledSendId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScheduledSendId");
+
+                    b.ToTable("ScheduledSendAttachments");
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.SendOperation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -906,6 +1008,28 @@ namespace MailClient.Infrastructure.Migrations
                     b.Navigation("MailAccount");
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.ScheduledSend", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", "MailAccount")
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MailAccount");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.ScheduledSendAttachment", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.ScheduledSend", "ScheduledSend")
+                        .WithMany("Attachments")
+                        .HasForeignKey("ScheduledSendId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ScheduledSend");
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.SendOperation", b =>
                 {
                     b.HasOne("MailClient.Domain.Entities.MailAccount", null)
@@ -977,6 +1101,11 @@ namespace MailClient.Infrastructure.Migrations
                     b.Navigation("Mails");
 
                     b.Navigation("SyncState");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.ScheduledSend", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 #pragma warning restore 612, 618
         }
