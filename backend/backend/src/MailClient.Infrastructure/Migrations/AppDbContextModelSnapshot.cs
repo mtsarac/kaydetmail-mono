@@ -137,6 +137,40 @@ namespace MailClient.Infrastructure.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.Contact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<Guid>("MailAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NormalizedEmail")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailAccountId", "NormalizedEmail")
+                        .IsUnique();
+
+                    b.ToTable("Contacts");
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.Conversation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -391,6 +425,9 @@ namespace MailClient.Infrastructure.Migrations
                     b.Property<bool>("SaveSentCopy")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Signature")
+                        .HasColumnType("text");
+
                     b.Property<string>("SmtpHost")
                         .IsRequired()
                         .HasColumnType("text");
@@ -524,6 +561,61 @@ namespace MailClient.Infrastructure.Migrations
                     b.ToTable("MailHeaders");
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.MailLabel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Color")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("MailAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailAccountId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("MailLabels");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.MailLabelAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MailAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MailId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MailLabelId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailId");
+
+                    b.HasIndex("MailLabelId");
+
+                    b.HasIndex("MailAccountId", "MailId", "MailLabelId")
+                        .IsUnique();
+
+                    b.ToTable("MailLabelAssignments");
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.MailParticipant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -602,6 +694,31 @@ namespace MailClient.Infrastructure.Migrations
                     b.ToTable("MailSessions");
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.MailSnooze", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MailAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MailId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailId");
+
+                    b.HasIndex("MailAccountId", "MailId")
+                        .IsUnique();
+
+                    b.ToTable("MailSnoozes");
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.OAuthStateNonce", b =>
                 {
                     b.Property<Guid>("Id")
@@ -622,6 +739,31 @@ namespace MailClient.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("OAuthStateNonces");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.PinnedMail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MailAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MailId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("PinnedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailId");
+
+                    b.HasIndex("MailAccountId", "MailId")
+                        .IsUnique();
+
+                    b.ToTable("PinnedMails");
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.RuntimeConfiguration", b =>
@@ -917,6 +1059,15 @@ namespace MailClient.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.Contact", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.Conversation", b =>
                 {
                     b.HasOne("MailClient.Domain.Entities.MailAccount", "MailAccount")
@@ -994,6 +1145,38 @@ namespace MailClient.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MailClient.Domain.Entities.MailLabel", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", "MailAccount")
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MailAccount");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.MailLabelAssignment", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MailClient.Domain.Entities.Mail", null)
+                        .WithMany()
+                        .HasForeignKey("MailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MailClient.Domain.Entities.MailLabel", null)
+                        .WithMany()
+                        .HasForeignKey("MailLabelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MailClient.Domain.Entities.MailParticipant", b =>
                 {
                     b.HasOne("MailClient.Domain.Entities.Mail", null)
@@ -1012,6 +1195,36 @@ namespace MailClient.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("MailAccount");
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.MailSnooze", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MailClient.Domain.Entities.Mail", null)
+                        .WithMany()
+                        .HasForeignKey("MailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MailClient.Domain.Entities.PinnedMail", b =>
+                {
+                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MailClient.Domain.Entities.Mail", null)
+                        .WithMany()
+                        .HasForeignKey("MailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.ScheduledSend", b =>
