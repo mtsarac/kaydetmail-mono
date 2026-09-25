@@ -314,6 +314,9 @@ namespace MailClient.Infrastructure.Migrations
                         .HasMaxLength(998)
                         .HasColumnType("character varying(998)");
 
+                    b.Property<bool>("NotificationPending")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("PreviousMailFolderId")
                         .HasColumnType("uuid");
 
@@ -424,6 +427,15 @@ namespace MailClient.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(320)
                         .HasColumnType("character varying(320)");
+
+                    b.Property<int>("NotificationPrivacy")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("NotificationsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("NotifyInboxOnly")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Provider")
                         .HasColumnType("integer");
