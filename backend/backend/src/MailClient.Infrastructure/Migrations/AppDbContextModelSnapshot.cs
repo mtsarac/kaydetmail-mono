@@ -401,6 +401,9 @@ namespace MailClient.Infrastructure.Migrations
                         .HasMaxLength(320)
                         .HasColumnType("character varying(320)");
 
+                    b.Property<int>("FolderSyncScope")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ImapHost")
                         .IsRequired()
                         .HasColumnType("text");
