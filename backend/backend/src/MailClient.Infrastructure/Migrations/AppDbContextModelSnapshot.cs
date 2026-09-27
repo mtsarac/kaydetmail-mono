@@ -1063,6 +1063,9 @@ namespace MailClient.Infrastructure.Migrations
                     b.Property<Guid?>("ReplySourceMailId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("RequestReadReceipt")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("Revision")
                         .IsConcurrencyToken()
                         .HasColumnType("integer");
