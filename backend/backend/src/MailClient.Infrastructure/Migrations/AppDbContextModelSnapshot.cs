@@ -334,9 +334,6 @@ namespace MailClient.Infrastructure.Migrations
                         .HasMaxLength(4096)
                         .HasColumnType("character varying(4096)");
 
-                    b.Property<bool>("RulePending")
-                        .HasColumnType("boolean");
-
                     b.Property<NpgsqlTsVector>("SearchVector")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("tsvector")
@@ -723,59 +720,6 @@ namespace MailClient.Infrastructure.Migrations
                     b.HasIndex("MailId", "Type", "SortOrder");
 
                     b.ToTable("Participants");
-                });
-
-            modelBuilder.Entity("MailClient.Domain.Entities.MailRule", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ActionJson")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ConditionJson")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("Enabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LegacyId")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("Logic")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
-
-                    b.Property<Guid>("MailAccountId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MailAccountId", "LegacyId")
-                        .IsUnique();
-
-                    b.HasIndex("MailAccountId", "Priority", "Id");
-
-                    b.ToTable("MailRules");
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.MailSession", b =>
@@ -1530,17 +1474,6 @@ namespace MailClient.Infrastructure.Migrations
                         .HasForeignKey("MailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("MailClient.Domain.Entities.MailRule", b =>
-                {
-                    b.HasOne("MailClient.Domain.Entities.MailAccount", "MailAccount")
-                        .WithMany()
-                        .HasForeignKey("MailAccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MailAccount");
                 });
 
             modelBuilder.Entity("MailClient.Domain.Entities.MailSession", b =>
