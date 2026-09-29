@@ -540,6 +540,12 @@ namespace MailClient.Infrastructure.Migrations
                         .HasMaxLength(8)
                         .HasColumnType("character varying(8)");
 
+                    b.Property<int>("DetectedFolderType")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("FolderRoleOverride")
+                        .HasColumnType("integer");
+
                     b.Property<int>("FolderType")
                         .HasColumnType("integer");
 
@@ -564,6 +570,9 @@ namespace MailClient.Infrastructure.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MailAccountId", "FolderRoleOverride")
+                        .IsUnique();
 
                     b.HasIndex("MailAccountId", "FullName")
                         .IsUnique();
@@ -951,7 +960,6 @@ namespace MailClient.Infrastructure.Migrations
 
                     b.ToTable("PinnedMails");
                 });
-
 
             modelBuilder.Entity("MailClient.Domain.Entities.RuntimeConfiguration", b =>
                 {
@@ -1513,7 +1521,6 @@ namespace MailClient.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
-
 
             modelBuilder.Entity("MailClient.Domain.Entities.ScheduledSend", b =>
                 {
