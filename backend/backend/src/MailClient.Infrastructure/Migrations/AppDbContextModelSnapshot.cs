@@ -85,14 +85,14 @@ namespace MailClient.Infrastructure.Migrations
                     b.Property<Guid>("MailId")
                         .HasColumnType("uuid");
 
-                    b.Property<long>("SizeBytes")
-                        .HasColumnType("bigint");
-
-
                     b.Property<string>("RemotePartId")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("StoragePath")
                         .IsRequired()
                         .HasColumnType("text");
@@ -952,44 +952,6 @@ namespace MailClient.Infrastructure.Migrations
                     b.ToTable("PinnedMails");
                 });
 
-            modelBuilder.Entity("MailClient.Domain.Entities.ReplyReminder", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ConversationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("DueAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("MailAccountId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("MailId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("NotifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MailId");
-
-                    b.HasIndex("MailAccountId", "MailId")
-                        .IsUnique();
-
-                    b.HasIndex("Status", "DueAtUtc");
-
-                    b.ToTable("ReplyReminders");
-                });
 
             modelBuilder.Entity("MailClient.Domain.Entities.RuntimeConfiguration", b =>
                 {
@@ -1552,20 +1514,6 @@ namespace MailClient.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("MailClient.Domain.Entities.ReplyReminder", b =>
-                {
-                    b.HasOne("MailClient.Domain.Entities.MailAccount", null)
-                        .WithMany()
-                        .HasForeignKey("MailAccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MailClient.Domain.Entities.Mail", null)
-                        .WithMany()
-                        .HasForeignKey("MailId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
 
             modelBuilder.Entity("MailClient.Domain.Entities.ScheduledSend", b =>
                 {
