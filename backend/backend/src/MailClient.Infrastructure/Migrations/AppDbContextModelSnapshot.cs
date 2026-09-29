@@ -553,11 +553,17 @@ namespace MailClient.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("HasLocalParentOverride")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsSyncEnabled")
                         .HasColumnType("boolean");
+
+                    b.Property<Guid?>("LocalParentId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("MailAccountId")
                         .HasColumnType("uuid");
