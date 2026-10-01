@@ -331,6 +331,9 @@ namespace MailClient.Infrastructure.Migrations
                     b.Property<bool>("Recent")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("ReconciliationFingerprint")
+                        .HasColumnType("text");
+
                     b.Property<int>("ReconciliationState")
                         .HasColumnType("integer");
 
