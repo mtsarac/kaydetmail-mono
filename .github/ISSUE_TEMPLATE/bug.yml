@@ -1,0 +1,56 @@
+name: Hata bildirimi / Bug report
+description: Beklenmeyen davranışı bildirin / Report unexpected behavior
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Alan / Area
+      options:
+        - Frontend (Flutter)
+        - Backend (.NET API)
+        - Senkronizasyon / Sync
+        - Diğer / Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Hata nedir? / What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Yeniden üretme adımları / Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Beklenen davranış / Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Ortam / Environment
+      value: |
+        - Platform: [Android / iOS / Web / Linux ...]
+        - Sürüm veya commit / Version or commit:
+        - Mail sağlayıcı / Mail provider: [Gmail / Outlook / IMAP ...]
+  - type: markdown
+    attributes:
+      value: "Şifre, token, mail içeriği ve hesap adreslerini loglardan temizleyin. / Redact passwords, tokens, message bodies and account addresses from logs."
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Onay / Confirmation
+      options:
+        - label: Mevcut issue'ları aradım, bu bir tekrar değil / I searched existing issues
+          required: true

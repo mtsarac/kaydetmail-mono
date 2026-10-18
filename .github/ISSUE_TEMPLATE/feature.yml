@@ -1,0 +1,33 @@
+name: Özellik isteği / Feature request
+description: Yeni bir fikir önerin / Suggest an idea
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Sorun / Problem
+      description: Hangi sorunu çözüyor? / What problem does it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Önerilen çözüm / Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatifler / Alternatives considered
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Kapsam / Scope
+      options:
+        - Küçük / Small (< 100 satır)
+        - Orta / Medium (~100-500 satır)
+        - Büyük / Large (mimari değişiklik)
+      default: 0
+    validations:
+      required: true

@@ -1,0 +1,16 @@
+name: Soru / Question
+description: Proje hakkında soru sorun / Ask a question
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Sorunuz / Your question
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Bağlam / Context
+      description: Şimdiye kadar ne denediniz? / What have you tried?
