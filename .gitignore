@@ -1,0 +1,15 @@
+# secrets / runtime
+.env
+secrets/
+data/
+logs/
+
+# local tooling
+.claude/
+.serena/
+.codegraph/
+.omp/
+.opencode/
+.idea/
+.run/
+.worktrees/

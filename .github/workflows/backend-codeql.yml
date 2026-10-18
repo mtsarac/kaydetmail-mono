@@ -1,4 +1,4 @@
-name: codeql
+name: backend-codeql
 
 on:
   push:
@@ -30,8 +30,8 @@ jobs:
           filters: |
             backend:
               - 'backend/**'
-              - '.github/workflows/codeql.yml'
-              - '.editorconfig'
+              - '.github/workflows/backend-codeql.yml'
+              - 'backend/.editorconfig'
 
   analyze:
     needs: changes
@@ -57,7 +57,7 @@ jobs:
           languages: csharp
 
       - name: Build
-        run: dotnet build backend/MailClient.slnx --configuration Release
+        run: dotnet build backend/backend/MailClient.slnx --configuration Release
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
