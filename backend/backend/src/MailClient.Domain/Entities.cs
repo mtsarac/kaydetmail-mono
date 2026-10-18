@@ -1,0 +1,374 @@
+using MailClient.Domain.Enums;
+
+namespace MailClient.Domain.Entities;
+
+public sealed class MailAccount
+{
+    public Guid Id { get; set; }
+    public string EmailAddress { get; set; } = "";
+    public string NormalizedEmailAddress { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string Username { get; set; } = "";
+    public MailProvider Provider { get; set; }
+    public AuthenticationMethod AuthenticationMethod { get; set; }
+    public string ImapHost { get; set; } = "";
+    public int ImapPort { get; set; }
+    public MailSecurity ImapSecurity { get; set; }
+    public string SmtpHost { get; set; } = "";
+    public int SmtpPort { get; set; }
+    public MailSecurity SmtpSecurity { get; set; }
+    public DiscoverySource DiscoverySource { get; set; }
+    public bool SaveSentCopy { get; set; } = true;
+    public MailAccountStatus Status { get; set; } = MailAccountStatus.Active;
+    /// <summary>Set when the account is disabled because its email left the production allowlist; cleared if it is re-added. Drives grace-period deletion.</summary>
+    public DateTime? AccessRevokedAt { get; set; }
+    public Guid? DefaultNewSignatureId { get; set; }
+    public Guid? DefaultReplySignatureId { get; set; }
+    public Guid? DefaultForwardSignatureId { get; set; }
+    public FolderSyncScope FolderSyncScope { get; set; } = FolderSyncScope.InboxAndSent;
+    public bool NotificationsEnabled { get; set; } = true;
+    public bool NotifyInboxOnly { get; set; } = true;
+    public NotificationPrivacy NotificationPrivacy { get; set; } = NotificationPrivacy.Limited;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public DateTime? LastAuthenticatedAt { get; set; }
+    public ICollection<MailCredential> Credentials { get; set; } = [];
+    public ICollection<MailSession> Sessions { get; set; } = [];
+    public ICollection<MailFolder> Folders { get; set; } = [];
+    public ICollection<Mail> Mails { get; set; } = [];
+
+    /// <summary>Canonical form stored in <see cref="NormalizedEmailAddress"/> and allowlist entries.</summary>
+    public static string NormalizeEmailAddress(string email) => email.Trim().ToUpperInvariant();
+}
+
+public sealed class MailCredential
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public AuthenticationMethod AuthenticationMethod { get; set; }
+    public MailProvider Provider { get; set; }
+    public string EncryptedMaterial { get; set; } = "";
+    public DateTime? ExpiresAt { get; set; }
+    public string? Scopes { get; set; }
+    public string? ProviderMetadata { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public MailAccount MailAccount { get; set; } = null!;
+}
+
+public sealed class MailSession
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string RefreshTokenHash { get; set; } = "";
+    public string? DeviceIdentifier { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime LastUsedAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
+    public DateTime? RevokedAt { get; set; }
+    public Guid? ReplacedBySessionId { get; set; }
+    public MailAccount MailAccount { get; set; } = null!;
+}
+
+public sealed class MailFolder
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string Name { get; set; } = "";
+    public string FullName { get; set; } = "";
+    public string? Delimiter { get; set; }
+    /// <summary>Explicit local-only parent when the IMAP server cannot perform the requested hierarchy operation.</summary>
+    public Guid? LocalParentId { get; set; }
+    /// <summary>Distinguishes an explicit root override from no override (derive from the remote full name).</summary>
+    public bool HasLocalParentOverride { get; set; }
+    /// <summary>Effective role used by sync, send, drafts, trash and spam: the override, else the detected role.</summary>
+    public MailFolderType FolderType { get; set; } = MailFolderType.Unknown;
+    /// <summary>Role reported by the mail server at the last folder discovery.</summary>
+    public MailFolderType DetectedFolderType { get; set; } = MailFolderType.Unknown;
+    /// <summary>User-chosen Sent/Drafts/Trash/Junk role; survives folder refresh. Null means automatic discovery.</summary>
+    public MailFolderType? FolderRoleOverride { get; set; }
+    public uint UidValidity { get; set; }
+    public bool IsSyncEnabled { get; set; } = true;
+    public bool IsAvailable { get; set; } = true;
+    public MailAccount? MailAccount { get; set; }
+    public SyncState? SyncState { get; set; }
+    public ICollection<Mail> Mails { get; set; } = [];
+
+    public static bool SyncedByDefault(FolderSyncScope scope, MailFolderType folderType) => scope switch
+    {
+        FolderSyncScope.AllFolders => true,
+        FolderSyncScope.SelectedFolders => false,
+        _ => folderType is MailFolderType.Inbox or MailFolderType.Sent
+    };
+
+    public static bool IsOverridableRole(MailFolderType role) =>
+        role is MailFolderType.Sent or MailFolderType.Drafts or MailFolderType.Trash or MailFolderType.Junk;
+
+    /// <summary>
+    /// Recomputes <see cref="FolderType"/> for every folder of one account: an override wins, and a folder whose
+    /// detected role was taken over by another folder's override becomes Custom so each role resolves to one folder.
+    /// </summary>
+    public static void ApplyRoles(IReadOnlyCollection<MailFolder> accountFolders)
+    {
+        var overridden = accountFolders.Where(folder => folder.FolderRoleOverride is not null)
+            .Select(folder => folder.FolderRoleOverride!.Value).ToHashSet();
+        foreach (var folder in accountFolders)
+            folder.FolderType = folder.FolderRoleOverride
+                ?? (overridden.Contains(folder.DetectedFolderType) ? MailFolderType.Custom : folder.DetectedFolderType);
+    }
+}
+public sealed class Mail
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public Guid MailFolderId { get; set; }
+    public Guid? PreviousMailFolderId { get; set; }
+    public Guid? ExpectedMailFolderId { get; set; }
+    public MailReconciliationState ReconciliationState { get; set; }
+    public bool IsRestoreReconciliation { get; set; }
+    public string? ReconciliationFingerprint { get; set; }
+    public Guid? ConversationId { get; set; }
+    public uint Uid { get; set; }
+    public uint UidValidity { get; set; }
+    public string MessageId { get; set; } = "";
+    public string InReplyToMessageId { get; set; } = "";
+    public string References { get; set; } = "";
+    public string Subject { get; set; } = "";
+    public string FromAddress { get; set; } = "";
+    public string FromDisplayName { get; set; } = "";
+    public string ToAddress { get; set; } = "";
+    public string BodyText { get; set; } = "";
+    public string BodyHtml { get; set; } = "";
+    public bool IsRead { get; set; }
+    public bool Answered { get; set; }
+    public bool Flagged { get; set; }
+    public bool Draft { get; set; }
+    public bool Deleted { get; set; }
+    public bool Recent { get; set; }
+    public bool HasAttachments { get; set; }
+    public bool NotificationPending { get; set; }
+    public DateTime SentAt { get; set; }
+    public DateTime ReceivedAt { get; set; }
+    public DateTime InternalDate { get; set; }
+    public MailAccount? MailAccount { get; set; }
+    public MailFolder? MailFolder { get; set; }
+    public ICollection<Attachment> Attachments { get; set; } = [];
+    public ICollection<MailParticipant> Participants { get; set; } = [];
+    public ICollection<MailHeader> Headers { get; set; } = [];
+    public Conversation? Conversation { get; set; }
+}
+
+public sealed class Conversation
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string NormalizedSubject { get; set; } = "";
+    public DateTime StartedAt { get; set; }
+    public DateTime LastMessageAt { get; set; }
+    public MailAccount? MailAccount { get; set; }
+    public ICollection<Mail> Mails { get; set; } = [];
+}
+
+public sealed class MailParticipant
+{
+    public Guid Id { get; set; }
+    public Guid MailId { get; set; }
+    public ParticipantType Type { get; set; }
+    public string Address { get; set; } = "";
+    public string NormalizedAddress { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public int SortOrder { get; set; }
+}
+
+public sealed class MailHeader
+{
+    public Guid Id { get; set; }
+    public Guid MailId { get; set; }
+    public string Name { get; set; } = "";
+    public string Value { get; set; } = "";
+}
+
+public sealed class Attachment
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public Guid MailId { get; set; }
+    public string FileName { get; set; } = "";
+    public string ContentType { get; set; } = "";
+    public string StoragePath { get; set; } = "";
+    public string RemotePartId { get; set; } = "";
+    public long SizeBytes { get; set; }
+    public bool IsInline { get; set; }
+    public string ContentId { get; set; } = "";
+    public string ContentDisposition { get; set; } = "";
+    public Mail? Mail { get; set; }
+}
+public sealed class SyncState
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public Guid MailFolderId { get; set; }
+    public uint UidValidity { get; set; }
+    public uint LastUid { get; set; }
+    public long NextUidScanStart { get; set; } = 1;
+
+    /// <summary>Exclusive upper bound for the next newest-first backfill page; 0 when history is complete.</summary>
+    public long BackfillNextUid { get; set; }
+
+    /// <summary>Resume point of the current chunked flag/removal reconciliation pass; 0 starts a new pass.</summary>
+    public uint FlagScanCursorUid { get; set; }
+    public DateTime? LastNewMailSyncAt { get; set; }
+    public DateTime? LastFlagSyncAt { get; set; }
+    public int ConsecutiveFailures { get; set; }
+    public SyncFailureCategory? LastFailureCategory { get; set; }
+    public DateTime? LastFailureAt { get; set; }
+    public DateTime? NextRetryAt { get; set; }
+    public DateTime? LastSuccessfulSyncAt { get; set; }
+    public DateTime? LastErrorNotifiedAt { get; set; }
+    public MailFolder? MailFolder { get; set; }
+}
+public sealed class SyncSkippedUid { public Guid Id { get; set; } public Guid MailAccountId { get; set; } public Guid MailFolderId { get; set; } public uint Uid { get; set; } public string Reason { get; set; } = ""; public DateTime SkippedAt { get; set; } }
+public sealed class SendOperation
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string IdempotencyKey { get; set; } = "";
+    public string Fingerprint { get; set; } = "";
+    public SendOperationStatus Status { get; set; } = SendOperationStatus.InProgress;
+    public bool SentCopySaved { get; set; }
+    public string? Warning { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+public sealed class ScheduledSend
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string ToAddressesJson { get; set; } = "[]";
+    public string CcAddressesJson { get; set; } = "[]";
+    public string BccAddressesJson { get; set; } = "[]";
+    public string Subject { get; set; } = "";
+    public string? BodyHtml { get; set; }
+    public string? BodyText { get; set; }
+    public DateTime SendAtUtc { get; set; }
+    public ScheduledSendStatus Status { get; set; } = ScheduledSendStatus.Pending;
+    public DateTime CreatedAtUtc { get; set; }
+    public Guid? SentMailId { get; set; }
+    public string? FailureReason { get; set; }
+    public int AttemptCount { get; set; }
+    public DateTime? NextAttemptAtUtc { get; set; }
+    public string IdempotencyKey { get; set; } = "";
+    public string Fingerprint { get; set; } = "";
+    public Guid? ReplySourceMailId { get; set; }
+    public int Revision { get; set; }
+    public Guid? IdentityId { get; set; }
+    public bool RequestReadReceipt { get; set; }
+    public MailAccount? MailAccount { get; set; }
+    public ICollection<ScheduledSendAttachment> Attachments { get; set; } = [];
+}
+public sealed class MailIdentity
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string EmailAddress { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string? ReplyTo { get; set; }
+    public Guid? SignatureId { get; set; }
+    public bool IsDefault { get; set; }
+}
+public sealed class ScheduledSendAttachment
+{
+    public Guid Id { get; set; }
+    public Guid ScheduledSendId { get; set; }
+    public string FileName { get; set; } = "";
+    public string ContentType { get; set; } = "";
+    public string StoragePath { get; set; } = "";
+    public long SizeBytes { get; set; }
+    public ScheduledSend? ScheduledSend { get; set; }
+}
+public sealed class DeviceToken { public Guid Id { get; set; } public Guid MailAccountId { get; set; } public Guid? MailSessionId { get; set; } public string Token { get; set; } = ""; public string Platform { get; set; } = ""; public string? AppVersion { get; set; } public string? Locale { get; set; } public DateTime RegisteredAt { get; set; } public DateTime? LastSeenAt { get; set; } }
+public sealed class AuditLog { public Guid Id { get; set; } public Guid? MailAccountId { get; set; } public string Action { get; set; } = ""; public string EntityType { get; set; } = ""; public string? EntityId { get; set; } public DateTime TimestampUtc { get; set; } public string? CorrelationId { get; set; } public string? Metadata { get; set; } }
+
+public sealed class MailLabel
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string Name { get; set; } = "";
+    public int Color { get; set; }
+    public int SortOrder { get; set; }
+    public MailAccount? MailAccount { get; set; }
+}
+public sealed class MailLabelAssignment
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public Guid MailId { get; set; }
+    public Guid MailLabelId { get; set; }
+}
+public sealed class MailSnooze
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public Guid MailId { get; set; }
+    public DateTime UntilUtc { get; set; }
+}
+public sealed class PinnedMail
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public Guid MailId { get; set; }
+    public DateTime PinnedAtUtc { get; set; }
+}
+public sealed class Contact
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string Email { get; set; } = "";
+    public string NormalizedEmail { get; set; } = "";
+    public string? DisplayName { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+}
+
+public sealed class MailTemplate
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string Name { get; set; } = "";
+    public string NormalizedName { get; set; } = "";
+    public string Subject { get; set; } = "";
+    public string? BodyText { get; set; }
+    public string? BodyHtml { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+public sealed class MailSignature
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string Name { get; set; } = "";
+    public string BodyText { get; set; } = "";
+    public string? BodyHtml { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+public sealed class TrustedSender
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public TrustedSenderKind Kind { get; set; }
+    public string Value { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
+public sealed class MailSnippet
+{
+    public Guid Id { get; set; }
+    public Guid MailAccountId { get; set; }
+    public string? Title { get; set; }
+    public string Text { get; set; } = "";
+    public int SortOrder { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}

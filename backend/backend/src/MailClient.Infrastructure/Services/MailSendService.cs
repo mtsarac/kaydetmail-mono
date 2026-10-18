@@ -1,0 +1,299 @@
+using MailClient.Domain;
+using System.Diagnostics;
+using MailClient.Application.Conversations;
+using MailClient.Application.Mail;
+using MailClient.Application.Observability;
+using MailClient.Application.Runtime;
+using MailClient.Infrastructure.Runtime;
+using MailClient.Application.Sync;
+using MailClient.Domain.Entities;
+using MailClient.Domain.Enums;
+using MailClient.Infrastructure.Email;
+using MailClient.Infrastructure.Observability;
+using MailClient.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using MimeKit;
+
+namespace MailClient.Infrastructure.Services;
+
+public sealed record SendMailResult(bool Sent, bool SentCopySaved, string? Warning, Guid? MailId = null, Guid? ConversationId = null, MailConnectionFailure? PreDeliveryFailure = null);
+
+public sealed class MailSendService(
+    AppDbContext db,
+    Mail.IMailTransport transport,
+    SendOperationStore operations,
+    RuntimeOperationSettings operationSettings,
+    Sync.InlineFolderSync inlineSync,
+    AuditLogger audit,
+    ILogger<MailSendService> logger,
+    MailClientMetrics? metrics = null)
+{
+    public async Task<SendMailResult> SendAsync(
+        Guid accountId,
+        SendMailCommand command,
+        string? correlationId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await SendCoreAsync(accountId, command, correlationId, cancellationToken);
+        }
+        finally
+        {
+            foreach (var attachment in command.Attachments)
+                await attachment.Content.DisposeAsync();
+        }
+    }
+
+    private async Task<SendMailResult> SendCoreAsync(
+        Guid accountId,
+        SendMailCommand command,
+        string? correlationId,
+        CancellationToken cancellationToken)
+    {
+        var limits = (await operationSettings.GetAsync(cancellationToken)).Settings.Limits;
+        var recipients = MailRecipientResolver.Parse(command.To, command.Cc, command.Bcc);
+        var to = recipients.To.Select(recipient => new MailboxAddress(recipient.DisplayName, recipient.Address)).ToList();
+        var cc = recipients.Cc.Select(recipient => new MailboxAddress(recipient.DisplayName, recipient.Address)).ToList();
+        var bcc = recipients.Bcc.Select(recipient => new MailboxAddress(recipient.DisplayName, recipient.Address)).ToList();
+        ComposeMailValidator.ValidateBody(command.BodyHtml, command.BodyText, limits);
+        ComposeMailValidator.ValidateAttachments(command.Attachments, limits);
+        var subject = ComposeMailValidator.ValidateSubject(command.Subject);
+        var account = await db.MailAccounts.SingleOrDefaultAsync(
+            item => item.Id == command.AccountId && item.Id == accountId && item.Status == MailAccountStatus.Active,
+            cancellationToken)
+            ?? throw new InvalidOperationException("mail_account_not_found");
+
+        var identity = command.IdentityId is { } identityId
+            ? await db.MailIdentities.AsNoTracking().SingleOrDefaultAsync(x => x.Id == identityId && x.MailAccountId == account.Id, cancellationToken)
+                ?? throw new InvalidOperationException("identity_not_found")
+            : null;
+        ComposeMailValidator.ValidateIdempotencyKey(command.IdempotencyKey);
+
+        var threading = command.TrustedMessageId is not null
+            ? new ReplyThreading(command.TrustedInReplyToMessageId, command.TrustedReferences)
+            : await ResolveThreadingAsync(account.Id, command.ReplySourceMailId, cancellationToken);
+        var hashed = await ComposeMailValidator.HashAttachmentsAsync(command.Attachments, cancellationToken);
+        var fingerprint = SendOperationStore.Fingerprint(
+            account.Id, to, cc, bcc, subject, command.BodyHtml, command.BodyText, hashed,
+            [command.ReplySourceMailId?.ToString() ?? "", command.TrustedMessageId ?? "", command.IdentityId?.ToString() ?? "", command.RequestReadReceipt.ToString()]);
+        var claim = await operations.ClaimAsync(account.Id, command.IdempotencyKey, fingerprint, cancellationToken);
+        return claim switch
+        {
+            SendOperationStore.Replay replay => new SendMailResult(true, replay.Operation.SentCopySaved, replay.Operation.Warning),
+            SendOperationStore.Denied denied => throw new InvalidOperationException(denied.Code),
+            SendOperationStore.Proceed proceed => await SendAndAuditAsync(account, identity, to, cc, bcc, subject, command, threading, proceed.Operation, correlationId, cancellationToken),
+            _ => throw new InvalidOperationException("idempotency_key_required")
+        };
+    }
+
+    private async Task<SendMailResult> SendAndAuditAsync(
+        MailAccount account,
+        MailIdentity? identity,
+        IReadOnlyList<MailboxAddress> to,
+        IReadOnlyList<MailboxAddress> cc,
+        IReadOnlyList<MailboxAddress> bcc,
+        string subject,
+        SendMailCommand command,
+        ReplyThreading threading,
+        SendOperation operation,
+        string? correlationId,
+        CancellationToken cancellationToken)
+    {
+        var result = await SendAndStoreAsync(account, identity, to, cc, bcc, subject, command, threading, operation, cancellationToken);
+        if (result.Sent)
+        {
+            await audit.WriteAsync(account.Id, AuditActions.MailSent, "MailAccount", account.Id.ToString(),
+                new Dictionary<string, string?> { ["toAddress"] = string.Join(',', to.Select(x => x.Address)), ["sentCopySaved"] = result.SentCopySaved.ToString() },
+                correlationId, cancellationToken);
+        }
+
+        return result;
+    }
+
+    private async Task<SendMailResult> SendAndStoreAsync(
+        MailAccount account,
+        MailIdentity? identity,
+        IReadOnlyList<MailboxAddress> to,
+        IReadOnlyList<MailboxAddress> cc,
+        IReadOnlyList<MailboxAddress> bcc,
+        string subject,
+        SendMailCommand command,
+        ReplyThreading threading,
+        SendOperation operation,
+        CancellationToken cancellationToken)
+    {
+        MimeMessage message;
+        try
+        {
+            message = MimeMessageBuilder.Build(
+                identity?.EmailAddress ?? account.EmailAddress,
+                string.IsNullOrWhiteSpace(identity?.DisplayName) ? account.DisplayName : identity.DisplayName,
+                to, cc, bcc, subject, command.BodyHtml, command.BodyText, command.Attachments,
+                threading.InReplyToMessageId, threading.References, command.TrustedMessageId, identity?.ReplyTo);
+            if (command.RequestReadReceipt)
+                message.Headers.Add("Disposition-Notification-To", new MailboxAddress(
+                    string.IsNullOrWhiteSpace(identity?.DisplayName) ? account.DisplayName : identity.DisplayName,
+                    identity?.EmailAddress ?? account.EmailAddress).ToString());
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Send message could not be constructed for account {AccountId}.", account.Id);
+            await operations.TryFailAsync(operation.Id, "The message could not be constructed.", cancellationToken);
+            throw new InvalidOperationException("message_not_constructible");
+        }
+
+        using var activity = MailClientTelemetry.StartActivity("mailclient.mail.send");
+        activity?.SetTag("mail.provider", MailClientTelemetry.Provider(account.Provider));
+        var started = Stopwatch.GetTimestamp();
+        try
+        {
+            await transport.SendAsync(account, message, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            RecordSend(activity, account.Provider, "cancelled", started);
+            await MarkUnknownBestEffortAsync(operation);
+            throw;
+        }
+        catch (SmtpDeliveryException ex)
+        {
+            MailClientTelemetry.MarkFailed(activity, ex);
+            RecordSend(activity, account.Provider, "delivery_unknown", started);
+            logger.LogWarning(ex, "SMTP delivery outcome unknown for account {AccountId}.", account.Id);
+            await operations.TryMarkUnknownAsync(operation.Id, cancellationToken);
+            throw new InvalidOperationException("delivery_unknown");
+        }
+        catch (MailConnectionException ex)
+        {
+            MailClientTelemetry.MarkFailed(activity, ex);
+            RecordSend(activity, account.Provider, "failure", started);
+            logger.LogWarning(ex, "SMTP send failed before delivery for account {AccountId}.", account.Id);
+            await operations.TryFailAsync(operation.Id, "The message could not be sent.", cancellationToken);
+            return new SendMailResult(false, false, "The message could not be sent.", PreDeliveryFailure: ex.Failure);
+        }
+        catch (Exception ex)
+        {
+            MailClientTelemetry.MarkFailed(activity, ex);
+            RecordSend(activity, account.Provider, "delivery_unknown", started);
+            logger.LogWarning(ex, "SMTP send failed ambiguously for account {AccountId}.", account.Id);
+            await operations.TryMarkUnknownAsync(operation.Id, cancellationToken);
+            throw new InvalidOperationException("delivery_unknown");
+        }
+
+        RecordSend(activity, account.Provider, "success", started);
+
+        await operations.TryCompleteAsync(operation.Id, SendOperationStatus.Sent, false, null, CancellationToken.None);
+
+        if (!account.SaveSentCopy)
+            return new SendMailResult(true, false, null);
+
+        var sentFullName = await db.MailFolders
+            .Where(folder => folder.MailAccountId == account.Id && folder.FolderType == MailFolderType.Sent)
+            .Select(folder => folder.FullName)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (sentFullName is null)
+        {
+            logger.LogWarning("Sent copy skipped for account {AccountId}: no Sent folder discovered.", account.Id);
+            await operations.TryCompleteAsync(operation.Id, SendOperationStatus.Sent, false, "Message was sent, but no Sent folder is configured.", CancellationToken.None);
+            return new SendMailResult(true, false, "Message was sent, but no Sent folder is configured.");
+        }
+
+        try
+        {
+            ComposeMailValidator.RewindAttachments(command.Attachments);
+            await transport.AppendToSentAsync(account, sentFullName, message, cancellationToken);
+            await operations.TryCompleteAsync(operation.Id, SendOperationStatus.SentWithCopy, true, null, CancellationToken.None);
+            var (mailId, conversationId) = await FindSentCopyAsync(account.Id, sentFullName, message.MessageId, cancellationToken);
+            return new SendMailResult(true, true, null, mailId, conversationId);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            metrics?.RecordSentCopyFailure(account.Provider);
+            logger.LogWarning(ex, "Sent append failed for account {AccountId}.", account.Id);
+            await operations.TryCompleteAsync(operation.Id, SendOperationStatus.Sent, false, "Message was sent, but the Sent copy could not be stored.", CancellationToken.None);
+            return new SendMailResult(true, false, "Message was sent, but the Sent copy could not be stored.");
+        }
+    }
+
+    /// <summary>Best effort: pulls the Sent folder so the reply is queryable at once. Null ids just mean sync will catch up.</summary>
+    private async Task<(Guid? MailId, Guid? ConversationId)> FindSentCopyAsync(Guid accountId, string sentFullName, string? messageId, CancellationToken cancellationToken)
+    {
+        if (messageId is null)
+            return (null, null);
+        try
+        {
+            var folderId = await db.MailFolders
+                .Where(folder => folder.MailAccountId == accountId && folder.FullName == sentFullName)
+                .Select(folder => folder.Id)
+                .SingleAsync(cancellationToken);
+            if (!await inlineSync.TrySyncNowAsync(accountId, folderId, cancellationToken))
+                return (null, null);
+            var found = await db.Mails.AsNoTracking()
+                .Where(mail => mail.MailAccountId == accountId && mail.MailFolderId == folderId && mail.MessageId == messageId)
+                .Select(mail => new { mail.Id, mail.ConversationId })
+                .FirstOrDefaultAsync(cancellationToken);
+            return (found?.Id, found?.ConversationId);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Sent copy could not be resolved after send.");
+            return (null, null);
+        }
+    }
+
+    private void RecordSend(Activity? activity, MailProvider provider, string result, long started)
+    {
+        activity?.SetTag("mail.send.result", result);
+        metrics?.RecordMailSend(provider, result, Stopwatch.GetElapsedTime(started));
+    }
+
+    private async Task MarkUnknownBestEffortAsync(SendOperation operation)
+    {
+        try
+        {
+            using var safety = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await operations.TryMarkUnknownAsync(operation.Id, safety.Token);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Could not persist uncertain SMTP delivery state for send operation {OperationId}.", operation.Id);
+        }
+    }
+
+    private sealed record ReplyThreading(string? InReplyToMessageId, string? References);
+
+    private async Task<ReplyThreading> ResolveThreadingAsync(Guid accountId, Guid? sourceMailId, CancellationToken cancellationToken)
+    {
+        if (sourceMailId is not { } id)
+            return new(null, null);
+        var source = await db.Mails.AsNoTracking()
+            .Where(x => x.Id == id && x.MailAccountId == accountId)
+            .Select(x => new
+            {
+                x.MessageId,
+                x.InReplyToMessageId,
+                x.References,
+                IsDraftSource = db.MailFolders.Any(folder => folder.MailAccountId == accountId
+                    && folder.FolderType == MailFolderType.Drafts
+                    && (folder.Id == x.MailFolderId || folder.Id == x.PreviousMailFolderId))
+            })
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new InvalidOperationException("mail_not_found");
+        // An opened reply draft is already threaded. Its saved GUID remains
+        // a valid source after an edit retires that version into Trash.
+        if (source.IsDraftSource)
+            return new(source.InReplyToMessageId, source.References);
+        var (inReplyTo, references) = ConversationEngine.ReplyHeaders(source.MessageId, source.References);
+        return new(inReplyTo, references);
+    }
+}

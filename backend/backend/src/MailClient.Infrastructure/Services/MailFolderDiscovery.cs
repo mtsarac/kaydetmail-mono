@@ -1,0 +1,28 @@
+using MailClient.Domain.Enums;
+using MailKit;
+
+namespace MailClient.Infrastructure.Services;
+
+public static class MailFolderDiscovery
+{
+    public static MailFolderType Classify(FolderAttributes attributes, string fullName) => attributes switch
+    {
+        var value when value.HasFlag(FolderAttributes.Inbox) => MailFolderType.Inbox,
+        var value when value.HasFlag(FolderAttributes.Sent) => MailFolderType.Sent,
+        var value when value.HasFlag(FolderAttributes.Drafts) => MailFolderType.Drafts,
+        var value when value.HasFlag(FolderAttributes.Trash) => MailFolderType.Trash,
+        var value when value.HasFlag(FolderAttributes.Junk) => MailFolderType.Junk,
+        var value when value.HasFlag(FolderAttributes.Archive) => MailFolderType.Archive,
+        _ when string.Equals(fullName, "INBOX", StringComparison.OrdinalIgnoreCase) => MailFolderType.Inbox,
+        _ when string.Equals(fullName, "Sent", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(fullName, "Sent Items", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(fullName, "Sent Messages", StringComparison.OrdinalIgnoreCase) => MailFolderType.Sent,
+        _ when string.Equals(fullName, "Drafts", StringComparison.OrdinalIgnoreCase) => MailFolderType.Drafts,
+        _ when string.Equals(fullName, "Trash", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(fullName, "Deleted Items", StringComparison.OrdinalIgnoreCase) => MailFolderType.Trash,
+        _ when string.Equals(fullName, "Junk", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(fullName, "Spam", StringComparison.OrdinalIgnoreCase) => MailFolderType.Junk,
+        _ when string.Equals(fullName, "Archive", StringComparison.OrdinalIgnoreCase) => MailFolderType.Archive,
+        _ => MailFolderType.Custom
+    };
+}

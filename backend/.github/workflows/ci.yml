@@ -1,0 +1,139 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Lightweight gate: main requires the build-test and format checks, so this
+  # workflow must run on every push/PR. Expensive jobs below are skipped (which
+  # counts as passing for required checks) when no backend-relevant file changed.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/ci.yml'
+              - '.editorconfig'
+
+  build-test:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      greenmail:
+        image: greenmail/standalone:2.1.8
+        env:
+          GREENMAIL_OPTS: -Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=test@localhost:test123
+        ports:
+          - 3143:3143
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore backend/MailClient.slnx
+
+      - name: Build (Release, no restore)
+        run: dotnet build backend/MailClient.slnx --configuration Release --no-restore
+
+      - name: Audit NuGet vulnerabilities (transitive included)
+        run: |
+          set -o pipefail
+          dotnet list backend/MailClient.slnx package --vulnerable --include-transitive 2>&1 | tee nuget-audit.txt
+          if grep -q "has the following vulnerable packages" nuget-audit.txt; then
+            echo "::error::Vulnerable NuGet packages detected (see audit above)."
+            exit 1
+          fi
+
+      - name: Test (Release, no build)
+        env:
+          MAILCLIENT_TEST_POSTGRES_ADMIN: Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres
+          MAILCLIENT_TEST_GREENMAIL: "1"
+        run: dotnet test backend/MailClient.slnx --configuration Release --no-build --verbosity normal
+
+  docker:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build runtime image
+        run: docker build -f backend/Dockerfile --target runtime -t mailclient-api:ci backend
+
+      - name: Start container and smoke-test /health/live
+        run: |
+          set -euo pipefail
+          # Development bypasses the production-only ConnectionStrings/DataProtection/Jwt
+          # checks in StartupConfig.Validate — this smoke test only proves the image boots
+          # and serves a request, not that it's configured for a real deployment.
+          container=$(docker run -d -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Development mailclient-api:ci)
+          trap 'docker logs "$container"; docker rm -f "$container" >/dev/null' EXIT
+          for _ in $(seq 1 30); do
+            if curl --fail --silent http://localhost:8080/health/live; then
+              echo
+              echo "Container is healthy."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Container never became healthy within 30s."
+          exit 1
+
+  format:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Check formatting
+        run: dotnet format backend/MailClient.slnx --verify-no-changes

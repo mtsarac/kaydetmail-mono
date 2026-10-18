@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://localhost:5071",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:7264;http://localhost:5071",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "lan-http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://0.0.0.0:5071",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "Jwt__KeyPath": "./data/lan-jwt.key",
+        "DataProtection__KeyPath": "./data/protection-keys",
+        "DataProtection__CertificatePath": "./data/lan-dataprotection.pfx",
+        "Firebase__Enabled": "true",
+        "Firebase__ProjectId": "mail-client-37a01",
+        "Firebase__CredentialsPath": "../../../secrets/mail-client-37a01-firebase-adminsdk-fbsvc-588f026e0e.json"
+      }
+    }
+  }
+}
