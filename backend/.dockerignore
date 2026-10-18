@@ -8,3 +8,7 @@ docs/
 tests/
 *.user
 .vs/
+.env
+secrets/
+.worktrees/
+.git/

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Build context: backend/  (docker build -f backend/Dockerfile backend)
+# Build context: backend/  (docker build -f Dockerfile .)
 
 ARG DOTNET_VERSION=10.0
 

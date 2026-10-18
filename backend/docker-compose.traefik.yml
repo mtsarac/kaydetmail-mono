@@ -46,7 +46,7 @@ services:
 
   migrate:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
       target: migrator
     command:
@@ -61,7 +61,7 @@ services:
 
   api:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
       target: runtime
     env_file:

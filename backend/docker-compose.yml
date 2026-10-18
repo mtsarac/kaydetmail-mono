@@ -34,7 +34,7 @@ services:
 
   migrate:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
       target: migrator
     command: ["--connection", "Host=postgres;Port=5432;Database=kaydetmail-db;Username=postgres;Password=postgres;GSS Encryption Mode=Disable"]
@@ -45,7 +45,7 @@ services:
 
   api:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
       target: runtime
     env_file:

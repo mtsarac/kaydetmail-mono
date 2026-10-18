@@ -3,7 +3,7 @@
 Backend only (`backend/`). Single-host, single-instance target — no multi-replica
 orchestration here.
 
-## Image layout (`backend/Dockerfile`)
+## Image layout (`Dockerfile`)
 
 Three stages, built from a `build` stage that publishes the API and produces a
 self-contained EF Core **migration bundle**:

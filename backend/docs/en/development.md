@@ -32,8 +32,8 @@ variables (e.g. `export ConnectionStrings__Default=...`) or rely on the
 
 ```bash
 export KAYDETMAIL_DB_CONNECTION="Host=localhost;Port=5432;Database=kaydetmail-db;Username=postgres;Password=postgres"
-dotnet ef database update --project backend/src/MailClient.Infrastructure --startup-project backend/src/MailClient.Api
-dotnet run --project backend/src/MailClient.Api
+dotnet ef database update --project src/MailClient.Infrastructure --startup-project src/MailClient.Api
+dotnet run --project src/MailClient.Api
 ```
 
 Runtime files: `data/` (attachments, data-protection keys) and `logs/` are git-ignored.
@@ -52,12 +52,12 @@ it sets `Jwt__KeyPath=./data/lan-jwt.key`, so the key is read from that file.
 It needs three gitignored files the profile's `environmentVariables` point
 at, so a fresh clone must generate/obtain them first:
 
-- `backend/src/MailClient.Api/data/lan-jwt.key` — 32+ random characters:
-  `openssl rand -hex 32 > backend/src/MailClient.Api/data/lan-jwt.key`.
-- `backend/src/MailClient.Api/data/lan-dataprotection.pfx` — a self-signed
+- `src/MailClient.Api/data/lan-jwt.key` — 32+ random characters:
+  `openssl rand -hex 32 > src/MailClient.Api/data/lan-jwt.key`.
+- `src/MailClient.Api/data/lan-dataprotection.pfx` — a self-signed
   Data Protection cert, empty export password:
   `openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 3650 -nodes -subj "/CN=mailclient-lan-dataprotection"`
-  then `openssl pkcs12 -export -out backend/src/MailClient.Api/data/lan-dataprotection.pfx -inkey key.pem -in cert.pem -passout pass:`.
+  then `openssl pkcs12 -export -out src/MailClient.Api/data/lan-dataprotection.pfx -inkey key.pem -in cert.pem -passout pass:`.
 - `secrets/mail-client-37a01-firebase-adminsdk-fbsvc-588f026e0e.json` — the
   project's Firebase service-account key (ask whoever holds it); without it,
   either obtain the real file or set `Firebase__Enabled=false` in the profile
@@ -78,11 +78,11 @@ set `FIREBASE_CREDENTIALS_HOST_PATH` instead — compose mounts it and fixes
 ## Build, test, format
 
 ```bash
-dotnet restore backend/MailClient.slnx
-dotnet build backend/MailClient.slnx --configuration Release --no-restore
-dotnet test backend/MailClient.slnx --configuration Release --no-build
-dotnet format backend/MailClient.slnx --verify-no-changes
-dotnet test backend/tests/MailClient.Tests/MailClient.Tests.csproj --filter 'FullyQualifiedName~TestName'
+dotnet restore MailClient.slnx
+dotnet build MailClient.slnx --configuration Release --no-restore
+dotnet test MailClient.slnx --configuration Release --no-build
+dotnet format MailClient.slnx --verify-no-changes
+dotnet test tests/MailClient.Tests/MailClient.Tests.csproj --filter 'FullyQualifiedName~TestName'
 ```
 
 Warnings are errors (`Directory.Build.props`).

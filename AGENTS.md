@@ -35,12 +35,12 @@ Background flow: `MailSyncService` schedules work, `SyncCoordinator` limits conc
 - `frontend/lib/state/`: shared `ChangeNotifier` state and offline queues.
 - `frontend/lib/screens/`, `lib/widgets/`: UI surfaces and reusable widgets.
 - `frontend/test/`: Flutter unit and widget tests.
-- `backend/backend/src/MailClient.Api/`: host, middleware, and minimal API endpoint groups.
-- `backend/backend/src/MailClient.Application/`: DTOs, interfaces, policies, options, runtime settings.
-- `backend/backend/src/MailClient.Domain/`: dependency-free entities and enums.
-- `backend/backend/src/MailClient.Infrastructure/`: EF Core, MailKit, OAuth, sync, storage, and push implementations.
-- `backend/backend/tests/MailClient.Tests/`: xUnit unit, API, security, and integration tests.
-- `backend/backend/docs/`: architecture, API, configuration, development, and production guidance.
+- `backend/src/MailClient.Api/`: host, middleware, and minimal API endpoint groups.
+- `backend/src/MailClient.Application/`: DTOs, interfaces, policies, options, runtime settings.
+- `backend/src/MailClient.Domain/`: dependency-free entities and enums.
+- `backend/src/MailClient.Infrastructure/`: EF Core, MailKit, OAuth, sync, storage, and push implementations.
+- `backend/tests/MailClient.Tests/`: xUnit unit, API, security, and integration tests.
+- `backend/docs/`: architecture, API, configuration, development, and production guidance.
 
 ## Development Commands
 
@@ -94,12 +94,12 @@ Without Docker, export `KAYDETMAIL_DB_CONNECTION`, then run `dotnet ef database 
 - `frontend/lib/services/api_client.dart`: transport, token refresh, uploads/downloads.
 - `frontend/lib/services/mail_cache.dart`: encrypted SQLite mail cache.
 - `frontend/pubspec.yaml`, `analysis_options.yaml`: dependencies, Dart constraint, lint config.
-- `backend/backend/src/MailClient.Api/Program.cs`: backend composition root.
-- `backend/backend/src/MailClient.Domain/Entities.cs`: persisted domain model.
-- `backend/backend/src/MailClient.Infrastructure/AppDbContext.cs`: EF model and DbSets.
-- `backend/backend/Directory.Build.props`: shared .NET build policy.
+- `backend/src/MailClient.Api/Program.cs`: backend composition root.
+- `backend/src/MailClient.Domain/Entities.cs`: persisted domain model.
+- `backend/src/MailClient.Infrastructure/AppDbContext.cs`: EF model and DbSets.
+- `backend/Directory.Build.props`: shared .NET build policy.
 - `backend/docker-compose.yml`, `.env.example`: local stack and configuration template.
-- `frontend/docs/flutter-api-integration.md` and `backend/backend/docs/en/api-reference.md`: client/server API contracts.
+- `frontend/docs/flutter-api-integration.md` and `backend/docs/en/api-reference.md`: client/server API contracts.
 
 ## Runtime/Tooling Preferences
 

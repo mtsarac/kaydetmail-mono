@@ -3,7 +3,7 @@
 # put Caddy/nginx/Traefik in front and point it at api:8080.
 #
 # Usage:
-#   cp .env.example .env   # fill in real secrets, see backend/docs/DOCKER.md
+#   cp .env.example .env   # fill in real secrets, see docs/DOCKER.md
 #   docker compose -f docker-compose.prod.yml up --build -d
 
 name: mailclient
@@ -26,7 +26,7 @@ services:
 
   migrate:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
       target: migrator
     command:
@@ -39,7 +39,7 @@ services:
 
   api:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
       target: runtime
     env_file:

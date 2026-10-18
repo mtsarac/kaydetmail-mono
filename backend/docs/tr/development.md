@@ -32,8 +32,8 @@ veritabanı, `GSS Encryption Mode=Disable` ile):
 
 ```bash
 export KAYDETMAIL_DB_CONNECTION="Host=localhost;Port=5432;Database=kaydetmail-db;Username=postgres;Password=postgres"
-dotnet ef database update --project backend/src/MailClient.Infrastructure --startup-project backend/src/MailClient.Api
-dotnet run --project backend/src/MailClient.Api
+dotnet ef database update --project src/MailClient.Infrastructure --startup-project src/MailClient.Api
+dotnet run --project src/MailClient.Api
 ```
 
 Çalışma zamanı dosyaları: `data/` (ekler, data-protection anahtarları) ve `logs/`
@@ -53,12 +53,12 @@ bir anahtar commit'lemez: `Jwt__KeyPath=./data/lan-jwt.key` ayarlar, anahtar bu
 dosyadan okunur. Profilin `environmentVariables`'ının işaret ettiği gitignore'lu
 üç dosyaya ihtiyaç var; temiz bir clone önce bunları üretmeli/edinmeli:
 
-- `backend/src/MailClient.Api/data/lan-jwt.key` — 32+ rastgele karakter:
-  `openssl rand -hex 32 > backend/src/MailClient.Api/data/lan-jwt.key`.
-- `backend/src/MailClient.Api/data/lan-dataprotection.pfx` — boş export
+- `src/MailClient.Api/data/lan-jwt.key` — 32+ rastgele karakter:
+  `openssl rand -hex 32 > src/MailClient.Api/data/lan-jwt.key`.
+- `src/MailClient.Api/data/lan-dataprotection.pfx` — boş export
   şifreli self-signed bir Data Protection sertifikası:
   `openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 3650 -nodes -subj "/CN=mailclient-lan-dataprotection"`
-  ardından `openssl pkcs12 -export -out backend/src/MailClient.Api/data/lan-dataprotection.pfx -inkey key.pem -in cert.pem -passout pass:`.
+  ardından `openssl pkcs12 -export -out src/MailClient.Api/data/lan-dataprotection.pfx -inkey key.pem -in cert.pem -passout pass:`.
 - `secrets/mail-client-37a01-firebase-adminsdk-fbsvc-588f026e0e.json` —
   projenin Firebase service-account anahtarı (elinde olan birine sorun);
   yoksa gerçek dosyayı edinin ya da no-op push sender'a düşmesi için
@@ -78,11 +78,11 @@ Project settings → Service accounts'tan alın). Docker altında bunun yerine
 ## Build, test, format
 
 ```bash
-dotnet restore backend/MailClient.slnx
-dotnet build backend/MailClient.slnx --configuration Release --no-restore
-dotnet test backend/MailClient.slnx --configuration Release --no-build
-dotnet format backend/MailClient.slnx --verify-no-changes
-dotnet test backend/tests/MailClient.Tests/MailClient.Tests.csproj --filter 'FullyQualifiedName~TestAdi'
+dotnet restore MailClient.slnx
+dotnet build MailClient.slnx --configuration Release --no-restore
+dotnet test MailClient.slnx --configuration Release --no-build
+dotnet format MailClient.slnx --verify-no-changes
+dotnet test tests/MailClient.Tests/MailClient.Tests.csproj --filter 'FullyQualifiedName~TestAdi'
 ```
 
 Uyarılar hata sayılır (`Directory.Build.props`).

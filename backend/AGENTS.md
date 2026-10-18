@@ -2,11 +2,11 @@
 
 ## Project shape
 
-* Backend is a .NET 10 solution in `backend/MailClient.slnx`.
+* Backend is a .NET 10 solution in `MailClient.slnx`.
 * Projects are layered as `MailClient.Api`, `MailClient.Application`, `MailClient.Domain`, and `MailClient.Infrastructure`.
-* Tests live in `backend/tests/MailClient.Tests`.
-* API wiring and middleware order live in `backend/src/MailClient.Api/Program.cs`; endpoint groups are under `backend/src/MailClient.Api/Endpoints/`.
-* `backend/Directory.Build.props` enables nullable reference types, implicit usings, and treats warnings as errors.
+* Tests live in `tests/MailClient.Tests`.
+* API wiring and middleware order live in `src/MailClient.Api/Program.cs`; endpoint groups are under `src/MailClient.Api/Endpoints/`.
+* `Directory.Build.props` enables nullable reference types, implicit usings, and treats warnings as errors.
 * Preserve the existing layered architecture and avoid unnecessary abstractions or large unrelated refactors.
 
 ## Local configuration
@@ -18,12 +18,12 @@
 
 ## Commands
 
-* Restore: `dotnet restore backend/MailClient.slnx`
-* Build: `dotnet build backend/MailClient.slnx --configuration Release --no-restore`
-* Tests: `dotnet test backend/MailClient.slnx --configuration Release --no-build --verbosity normal`
-* Formatting check: `dotnet format backend/MailClient.slnx --verify-no-changes`
-* Vulnerability audit: `dotnet list backend/MailClient.slnx package --vulnerable --include-transitive`
-* Run one test: `dotnet test backend/tests/MailClient.Tests/MailClient.Tests.csproj --filter 'FullyQualifiedName~TestName'`
+* Restore: `dotnet restore MailClient.slnx`
+* Build: `dotnet build MailClient.slnx --configuration Release --no-restore`
+* Tests: `dotnet test MailClient.slnx --configuration Release --no-build --verbosity normal`
+* Formatting check: `dotnet format MailClient.slnx --verify-no-changes`
+* Vulnerability audit: `dotnet list MailClient.slnx package --vulnerable --include-transitive`
+* Run one test: `dotnet test tests/MailClient.Tests/MailClient.Tests.csproj --filter 'FullyQualifiedName~TestName'`
 
 ## Integration tests
 
