@@ -39,7 +39,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   lucide_icons_flutter: ^3.1.20
   file_picker: ^13.1.0
-  shared_preferences: ^2.3.3
+  shared_preferences: ^2.5.6
   http: ^1.6.0
   crypto: ^3.0.7
   flutter_secure_storage: ^11.2.0
@@ -47,12 +47,12 @@ dependencies:
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
   package_info_plus: ^10.2.1
-  sqlite3: ^3.6.0
+  sqlite3: ^3.7.1
   path_provider: ^2.1.6
   path: ^1.9.1
   receive_sharing_intent: ^1.9.0
   pdfrx: ^2.6.5
-  archive: ^4.3.0
+  archive: ^4.5.2
   flutter_widget_from_html_core: ^0.17.4
   flutter_local_notifications: ^22.3.1
   local_auth: ^3.0.2
@@ -66,8 +66,8 @@ dependencies:
   connectivity_plus: ^7.3.1
   image: ^4.10.1
   mime: ^2.0.0
-  battery_plus: ^7.1.1
-  image_picker: ^1.2.3
+  battery_plus: ^7.1.2
+  image_picker: ^1.2.4
   flutter_contacts: ^2.5.0
   flutter_quill: ^11.6.0
   flutter_quill_delta_from_html: ^1.5.3
