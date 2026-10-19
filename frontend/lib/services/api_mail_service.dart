@@ -26,6 +26,10 @@ import '../utils/attachment_mime.dart';
 import 'api_auth_service.dart';
 import 'api_client.dart';
 import 'api_exception.dart';
+import 'gateway/gateway_models.dart';
+import 'gateway/mail_gateway.dart';
+
+export 'gateway/gateway_models.dart';
 
 part 'api_mail_service/account.dart';
 part 'api_mail_service/folders.dart';
@@ -34,7 +38,6 @@ part 'api_mail_service/organize.dart';
 part 'api_mail_service/search.dart';
 part 'api_mail_service/compose.dart';
 part 'api_mail_service/mapping.dart';
-part 'api_mail_service/models.dart';
 
 /// Shared state and response mapping for the endpoint groups below.
 abstract class _ApiMailServiceBase {
@@ -291,6 +294,7 @@ class ApiMailService extends _ApiMailServiceBase
         _MailApi,
         _OrganizeApi,
         _SearchApi,
-        _ComposeApi {
+        _ComposeApi
+    implements MailGateway {
   ApiMailService(super._client, {super.syncPollInterval, super.syncTimeout});
 }

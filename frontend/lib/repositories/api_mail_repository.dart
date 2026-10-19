@@ -259,11 +259,11 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
   Future<void> _signOutSession(AccountSession session) async {
     try {
       await _unregisterDeviceFor(session);
-      await session.authService.logout();
+      await session.authService?.logout();
     } catch (_) {
       // Logout is local-first: remote revocation may fail while offline.
     } finally {
-      await session.authService.tokenStore.clear(session.account.id);
+      await session.authService?.tokenStore.clear(session.account.id);
       session.persistTimer?.cancel();
       _cancelReconnectRetry(session);
       await _purgeLocalData(session);
@@ -294,7 +294,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
   Future<void> _expireSession(String accountId) async {
     final session = _sessions.remove(accountId);
     if (session == null) return;
-    await session.authService.tokenStore.clear(accountId);
+    await session.authService?.tokenStore.clear(accountId);
     session.persistTimer?.cancel();
     _cancelReconnectRetry(session);
     await _purgeLocalData(session);
@@ -968,7 +968,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
     final session = _sessions[accountId];
     if (session == null) return;
     await session.mailService.deleteAccount();
-    await session.authService.tokenStore.clear(accountId);
+    await session.authService?.tokenStore.clear(accountId);
     await _unregisterDeviceFor(session);
     session.persistTimer?.cancel();
     _cancelReconnectRetry(session);
@@ -1035,7 +1035,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
     final session = _sessionForSettings(accountId);
     if (session == null) return const [];
     final sessions = await session.mailService.getSessions();
-    final myDeviceId = await session.authService.deviceIdentifierProvider
+    final myDeviceId = await session.authService?.deviceIdentifierProvider
         .getIdentifier();
     return sessions
         .map(
@@ -1608,7 +1608,18 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
       filename: attachment.name,
       sizeBytes: attachment.sizeBytes,
       open: ({rangeStart, abortTrigger}) async {
-        final response = await owner.authService.client.getStream(
+        final auth = owner.authService;
+        if (auth == null) {
+          // A direct account reads the part from its own store/IMAP session;
+          // there is no HTTP range to resume, so it always answers `200`.
+          final bytes = await owner.mailService.downloadAttachment(mailId, id);
+          return HttpStreamResult(
+            statusCode: 200,
+            headers: {'content-length': '${bytes.length}'},
+            stream: Stream.value(bytes),
+          );
+        }
+        final response = await auth.client.getStream(
           path,
           rangeStart: rangeStart,
           abortTrigger: abortTrigger,
