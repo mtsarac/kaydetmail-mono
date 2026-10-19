@@ -251,6 +251,9 @@ enum GatewayEventKind {
   /// The folder list changed.
   folders,
 
+  /// The state of scheduled sends changed (one went out, one failed).
+  scheduledSends,
+
   /// The mail server stopped being reachable.
   offline,
 

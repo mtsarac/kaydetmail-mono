@@ -33,6 +33,7 @@ import 'direct_account_setup.dart';
 import 'direct_connection.dart';
 import 'direct_credential_store.dart';
 import 'direct_errors.dart';
+import 'direct_scheduled_store.dart';
 import 'direct_send_journal.dart';
 import 'direct_meta_store.dart';
 import 'direct_store.dart';
@@ -52,6 +53,7 @@ part 'direct_gateway/compose.dart';
 part 'direct_gateway/folders.dart';
 part 'direct_gateway/local.dart';
 part 'direct_gateway/mail.dart';
+part 'direct_gateway/scheduled.dart';
 part 'direct_gateway/unsupported.dart';
 
 /// Shared state of the gateway's endpoint groups.
@@ -61,6 +63,7 @@ abstract class _DirectGatewayBase {
     this.store,
     this.syncOptions,
     this.staleAfter,
+    this.schedulerTick,
     DateTime Function()? clock,
   ) : _clock = clock ?? DateTime.now;
 
@@ -72,6 +75,11 @@ abstract class _DirectGatewayBase {
   /// the background.
   final Duration staleAfter;
   final DateTime Function() _clock;
+
+  /// Longest the scheduled-send timer sleeps; null turns it off (tests drive
+  /// [DirectMailGateway.runDueScheduledSends] themselves).
+  final Duration? schedulerTick;
+  Timer? _schedulerTimer;
 
   final StreamController<GatewayEvent> _events =
       StreamController<GatewayEvent>.broadcast();
@@ -259,18 +267,24 @@ class DirectMailGateway extends _DirectGatewayBase
         _DirectMailApi,
         _DirectActionApi,
         _DirectLocalApi,
-        _DirectComposeApi
+        _DirectComposeApi,
+        _DirectScheduledApi
     implements MailGateway {
   DirectMailGateway({
     required DirectAccountRuntime runtime,
     required DirectStore store,
     SyncOptions syncOptions = const SyncOptions(),
     Duration staleAfter = const Duration(seconds: 30),
+    Duration? schedulerTick = const Duration(minutes: 5),
     DateTime Function()? clock,
-  }) : super(runtime, store, syncOptions, staleAfter, clock);
+  }) : super(runtime, store, syncOptions, staleAfter, schedulerTick, clock) {
+    // A send that came due while the app was closed goes out now.
+    _armScheduler();
+  }
 
   /// Closes the connection and stops reporting.
   Future<void> dispose() async {
+    _schedulerTimer?.cancel();
     await runtime.close();
     await _events.close();
   }

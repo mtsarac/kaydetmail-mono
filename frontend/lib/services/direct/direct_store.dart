@@ -299,6 +299,47 @@ class DirectStore {
         PRIMARY KEY (account_id, send_key)
       )''',
     ],
+    // 6 — mail written now to be sent later, with its attachments. This
+    // device sends it when the time comes (while the app runs, or the next
+    // time it is opened), which is the only way a direct account can.
+    [
+      '''
+      CREATE TABLE d_scheduled (
+        account_id TEXT NOT NULL,
+        scheduled_id TEXT NOT NULL,
+        create_key TEXT NOT NULL,
+        revision INTEGER NOT NULL DEFAULT 1,
+        status TEXT NOT NULL,
+        to_json TEXT NOT NULL DEFAULT '[]',
+        cc_json TEXT NOT NULL DEFAULT '[]',
+        bcc_json TEXT NOT NULL DEFAULT '[]',
+        subject TEXT NOT NULL DEFAULT '',
+        body_text TEXT NOT NULL DEFAULT '',
+        body_html TEXT,
+        reply_source TEXT,
+        identity_id TEXT,
+        read_receipt INTEGER NOT NULL DEFAULT 0,
+        send_at_ms INTEGER NOT NULL,
+        created_ms INTEGER NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        next_attempt_ms INTEGER,
+        failure_reason TEXT,
+        sent_local_id TEXT,
+        PRIMARY KEY (account_id, scheduled_id)
+      )''',
+      'CREATE UNIQUE INDEX d_scheduled_key ON d_scheduled(account_id, create_key)',
+      '''
+      CREATE TABLE d_scheduled_files (
+        account_id TEXT NOT NULL,
+        scheduled_id TEXT NOT NULL,
+        file_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        mime TEXT,
+        size INTEGER NOT NULL,
+        content BLOB NOT NULL,
+        PRIMARY KEY (account_id, scheduled_id, file_id)
+      )''',
+    ],
   ];
 
   void _migrate() {

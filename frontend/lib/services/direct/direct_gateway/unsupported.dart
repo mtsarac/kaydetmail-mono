@@ -40,49 +40,4 @@ mixin _DirectUnsupportedApi on _DirectGatewayBase {
     bool? hasAttachment,
     String? labelId,
   }) async => throw _unsupported();
-
-  Future<ScheduledSend> scheduleSend({
-    required List<String> to,
-    List<String> cc = const [],
-    List<String> bcc = const [],
-    required String subject,
-    String bodyText = '',
-    String? bodyHtml,
-    List<Attachment> attachments = const [],
-    String? replySourceMailId,
-    String? identityId,
-    bool requestReadReceipt = false,
-    required DateTime sendAtUtc,
-    required String idempotencyKey,
-  }) async => throw _unsupported();
-  Future<void> cancelScheduledSend(String id) async => throw _unsupported();
-  Future<ScheduledSendDetail> getScheduledSend(String id) async =>
-      throw _unsupported();
-  Future<void> updateScheduledSend({
-    required String id,
-    required int expectedRevision,
-    required List<String> to,
-    List<String> cc = const [],
-    List<String> bcc = const [],
-    required String subject,
-    String bodyText = '',
-    String? bodyHtml,
-    required DateTime sendAtUtc,
-    List<String> keepAttachmentIds = const [],
-    List<Attachment> attachments = const [],
-  }) async => throw _unsupported();
-  Future<void> rescheduleFailedSend({
-    required String id,
-    required List<String> to,
-    List<String> cc = const [],
-    List<String> bcc = const [],
-    required String subject,
-    String bodyText = '',
-    String? bodyHtml,
-    List<String>? attachmentIds,
-    required DateTime sendAtUtc,
-    required String idempotencyKey,
-  }) async => throw _unsupported();
-  Future<List<ScheduledSend>> listScheduledSends() async =>
-      throw _unsupported();
 }

@@ -1140,6 +1140,8 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
             session,
             await session.mailService.getFolders(),
           );
+        case GatewayEventKind.scheduledSends:
+          await _scheduled.refreshScheduledSends();
         case GatewayEventKind.folders:
           _folders.applyFolderMap(
             session,
