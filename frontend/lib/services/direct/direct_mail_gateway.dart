@@ -30,6 +30,7 @@ import 'direct_account_setup.dart';
 import 'direct_connection.dart';
 import 'direct_credential_store.dart';
 import 'direct_errors.dart';
+import 'direct_meta_store.dart';
 import 'direct_store.dart';
 import 'email_mapper.dart';
 import 'imap_flags.dart';
@@ -41,6 +42,7 @@ import 'sync_engine.dart';
 part 'direct_gateway/account.dart';
 part 'direct_gateway/actions.dart';
 part 'direct_gateway/folders.dart';
+part 'direct_gateway/local.dart';
 part 'direct_gateway/mail.dart';
 part 'direct_gateway/unsupported.dart';
 
@@ -242,7 +244,8 @@ class DirectMailGateway extends _DirectGatewayBase
         _DirectAccountApi,
         _DirectFolderApi,
         _DirectMailApi,
-        _DirectActionApi
+        _DirectActionApi,
+        _DirectLocalApi
     implements MailGateway {
   DirectMailGateway({
     required DirectAccountRuntime runtime,

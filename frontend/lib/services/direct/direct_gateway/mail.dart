@@ -132,7 +132,9 @@ mixin _DirectMailApi on _DirectGatewayBase {
       store.parts(accountId, id),
       resolveFolder: resolveFolder,
       accountId: accountId,
-      allowRemoteImages: allowRemoteImages,
+      allowRemoteImages:
+          allowRemoteImages ||
+          DirectMetaStore(store).isTrusted(accountId, row.fromAddress),
     );
   }
 

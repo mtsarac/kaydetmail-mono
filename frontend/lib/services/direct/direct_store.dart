@@ -195,6 +195,92 @@ class DirectStore {
       )''',
       'ALTER TABLE d_messages ADD COLUMN moved_ms INTEGER',
     ],
+    // 4 — what the app adds on top of the mailbox, which a mail server has no
+    // place for: pins, snoozes, labels, contacts, trusted senders, templates,
+    // signatures and sending identities. Message-bound rows go with the
+    // message.
+    [
+      '''
+      CREATE TABLE d_pins (
+        account_id TEXT NOT NULL,
+        local_id TEXT NOT NULL,
+        pinned_ms INTEGER NOT NULL,
+        PRIMARY KEY (account_id, local_id)
+      )''',
+      '''
+      CREATE TABLE d_snoozes (
+        account_id TEXT NOT NULL,
+        local_id TEXT NOT NULL,
+        until_ms INTEGER NOT NULL,
+        PRIMARY KEY (account_id, local_id)
+      )''',
+      '''
+      CREATE TABLE d_labels (
+        account_id TEXT NOT NULL,
+        label_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        color INTEGER NOT NULL,
+        position INTEGER NOT NULL,
+        PRIMARY KEY (account_id, label_id)
+      )''',
+      '''
+      CREATE TABLE d_label_assignments (
+        account_id TEXT NOT NULL,
+        local_id TEXT NOT NULL,
+        label_id TEXT NOT NULL,
+        PRIMARY KEY (account_id, local_id, label_id)
+      )''',
+      'CREATE INDEX d_label_assignments_label ON d_label_assignments(account_id, label_id)',
+      '''
+      CREATE TABLE d_contacts (
+        account_id TEXT NOT NULL,
+        contact_id TEXT NOT NULL,
+        email TEXT NOT NULL,
+        display_name TEXT,
+        PRIMARY KEY (account_id, contact_id)
+      )''',
+      '''
+      CREATE TABLE d_trusted_senders (
+        account_id TEXT NOT NULL,
+        sender_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        value TEXT NOT NULL,
+        created_ms INTEGER NOT NULL,
+        PRIMARY KEY (account_id, sender_id)
+      )''',
+      '''
+      CREATE TABLE d_templates (
+        account_id TEXT NOT NULL,
+        template_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        subject TEXT NOT NULL DEFAULT '',
+        body_text TEXT,
+        created_ms INTEGER NOT NULL,
+        updated_ms INTEGER NOT NULL,
+        PRIMARY KEY (account_id, template_id)
+      )''',
+      '''
+      CREATE TABLE d_signatures (
+        account_id TEXT NOT NULL,
+        signature_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        body_text TEXT NOT NULL DEFAULT '',
+        created_ms INTEGER NOT NULL,
+        updated_ms INTEGER NOT NULL,
+        PRIMARY KEY (account_id, signature_id)
+      )''',
+      '''
+      CREATE TABLE d_identities (
+        account_id TEXT NOT NULL,
+        identity_id TEXT NOT NULL,
+        email TEXT NOT NULL,
+        display_name TEXT NOT NULL DEFAULT '',
+        reply_to TEXT,
+        signature_id TEXT,
+        is_default INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (account_id, identity_id)
+      )''',
+    ],
   ];
 
   void _migrate() {
@@ -924,7 +1010,14 @@ class DirectStore {
 
   /// Tables that hold rows about one message, keyed by `local_id`; they go
   /// when the message does.
-  static const _perMessageTables = ['d_bodies', 'd_parts', 'd_origins'];
+  static const _perMessageTables = [
+    'd_bodies',
+    'd_parts',
+    'd_origins',
+    'd_pins',
+    'd_snoozes',
+    'd_label_assignments',
+  ];
 
   void deleteMessage(String accountId, String localId) {
     for (final table in _perMessageTables) {
