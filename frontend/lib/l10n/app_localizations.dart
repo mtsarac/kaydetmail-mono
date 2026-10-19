@@ -4900,6 +4900,108 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{count} ileti'**
   String conversationMessageCount(int count);
+
+  /// No description provided for @directDnsFailure.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sunucu adı bulunamadı. Adresi kontrol edin.'**
+  String get directDnsFailure;
+
+  /// No description provided for @directHostUnreachable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Posta sunucusuna ulaşılamıyor. Sunucu adını ve bağlantı noktasını kontrol edin.'**
+  String get directHostUnreachable;
+
+  /// No description provided for @directTlsHandshakeFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güvenli bağlantı kurulamadı. Güvenlik türünü ve bağlantı noktasını kontrol edin.'**
+  String get directTlsHandshakeFailed;
+
+  /// No description provided for @directTlsCertificateInvalid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sunucunun sertifikası doğrulanamadı; bu bağlantı güvenli değil.'**
+  String get directTlsCertificateInvalid;
+
+  /// No description provided for @directTlsHostMismatch.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sunucunun sertifikası \"{host}\" adına verilmiş. Sunucu adı olarak bunu deneyin.'**
+  String directTlsHostMismatch(Object host);
+
+  /// No description provided for @directAuthFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıcı adı veya şifre kabul edilmedi.'**
+  String get directAuthFailed;
+
+  /// No description provided for @directAuthRequiresAppPassword.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu sağlayıcı normal şifreyle girişe izin vermiyor. Bir uygulama şifresi oluşturup onu kullanın.'**
+  String get directAuthRequiresAppPassword;
+
+  /// No description provided for @directAuthMethodUnsupported.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sunucu desteklediğimiz bir giriş yöntemi sunmuyor.'**
+  String get directAuthMethodUnsupported;
+
+  /// No description provided for @directImapCommandFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Posta sunucusu isteği kabul etmedi.'**
+  String get directImapCommandFailed;
+
+  /// No description provided for @directSmtpRejected.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gönderim sunucusu iletiyi kabul etmedi.'**
+  String get directSmtpRejected;
+
+  /// No description provided for @directSmtpSenderRejected.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gönderim sunucusu bu gönderen adresini kabul etmedi.'**
+  String get directSmtpSenderRejected;
+
+  /// No description provided for @directSmtpRecipientRejected.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alıcı adresi gönderim sunucusu tarafından reddedildi.'**
+  String get directSmtpRecipientRejected;
+
+  /// No description provided for @directMessageTooLarge.
+  ///
+  /// In tr, this message translates to:
+  /// **'İleti, sunucunun kabul ettiği boyutu aşıyor.'**
+  String get directMessageTooLarge;
+
+  /// No description provided for @directCapabilityMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'Posta sunucusu bu özelliği desteklemiyor.'**
+  String get directCapabilityMissing;
+
+  /// No description provided for @directQuotaExceeded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Posta kutusu dolu.'**
+  String get directQuotaExceeded;
+
+  /// No description provided for @directRateLimited.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sunucu çok fazla istek aldı. Bir süre sonra yeniden denenecek.'**
+  String get directRateLimited;
+
+  /// No description provided for @directTemporaryFailure.
+  ///
+  /// In tr, this message translates to:
+  /// **'Posta sunucusu geçici olarak yanıt vermiyor. Biraz sonra tekrar deneyin.'**
+  String get directTemporaryFailure;
 }
 
 class _AppLocalizationsDelegate

@@ -803,5 +803,27 @@
   "emailCount": "{count, plural, =1{1 email} other{{count} emails}}",
   "couldntReadSharedFiles": "{count, plural, =1{Couldn’t read the shared file: {names}} other{Couldn’t read {count} shared files: {names}}}",
   "earlierMessages": "Earlier messages",
-  "conversationMessageCount": "{count, plural, =1{1 message} other{{count} messages}}"
+  "conversationMessageCount": "{count, plural, =1{1 message} other{{count} messages}}",
+  "directDnsFailure": "The server name couldn’t be found. Check the address.",
+  "directHostUnreachable": "Can’t reach the mail server. Check the server name and port.",
+  "directTlsHandshakeFailed": "Couldn’t set up a secure connection. Check the security type and port.",
+  "directTlsCertificateInvalid": "The server’s certificate couldn’t be verified; this connection isn’t safe.",
+  "directTlsHostMismatch": "The server’s certificate was issued for \"{host}\". Try that as the server name.",
+  "@directTlsHostMismatch": {
+    "placeholders": {
+      "host": {}
+    }
+  },
+  "directAuthFailed": "The username or password was rejected.",
+  "directAuthRequiresAppPassword": "This provider doesn’t allow sign-in with your regular password. Create an app password and use that.",
+  "directAuthMethodUnsupported": "The server doesn’t offer a sign-in method we support.",
+  "directImapCommandFailed": "The mail server didn’t accept the request.",
+  "directSmtpRejected": "The sending server didn’t accept the message.",
+  "directSmtpSenderRejected": "The sending server didn’t accept this sender address.",
+  "directSmtpRecipientRejected": "The sending server rejected a recipient address.",
+  "directMessageTooLarge": "The message is larger than the server accepts.",
+  "directCapabilityMissing": "The mail server doesn’t support this feature.",
+  "directQuotaExceeded": "The mailbox is full.",
+  "directRateLimited": "The server received too many requests. It will be retried after a while.",
+  "directTemporaryFailure": "The mail server is temporarily unavailable. Try again shortly."
 }

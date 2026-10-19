@@ -2761,4 +2761,68 @@ class AppLocalizationsTr extends AppLocalizations {
   String conversationMessageCount(int count) {
     return '$count ileti';
   }
+
+  @override
+  String get directDnsFailure => 'Sunucu adı bulunamadı. Adresi kontrol edin.';
+
+  @override
+  String get directHostUnreachable =>
+      'Posta sunucusuna ulaşılamıyor. Sunucu adını ve bağlantı noktasını kontrol edin.';
+
+  @override
+  String get directTlsHandshakeFailed =>
+      'Güvenli bağlantı kurulamadı. Güvenlik türünü ve bağlantı noktasını kontrol edin.';
+
+  @override
+  String get directTlsCertificateInvalid =>
+      'Sunucunun sertifikası doğrulanamadı; bu bağlantı güvenli değil.';
+
+  @override
+  String directTlsHostMismatch(Object host) {
+    return 'Sunucunun sertifikası \"$host\" adına verilmiş. Sunucu adı olarak bunu deneyin.';
+  }
+
+  @override
+  String get directAuthFailed => 'Kullanıcı adı veya şifre kabul edilmedi.';
+
+  @override
+  String get directAuthRequiresAppPassword =>
+      'Bu sağlayıcı normal şifreyle girişe izin vermiyor. Bir uygulama şifresi oluşturup onu kullanın.';
+
+  @override
+  String get directAuthMethodUnsupported =>
+      'Sunucu desteklediğimiz bir giriş yöntemi sunmuyor.';
+
+  @override
+  String get directImapCommandFailed => 'Posta sunucusu isteği kabul etmedi.';
+
+  @override
+  String get directSmtpRejected => 'Gönderim sunucusu iletiyi kabul etmedi.';
+
+  @override
+  String get directSmtpSenderRejected =>
+      'Gönderim sunucusu bu gönderen adresini kabul etmedi.';
+
+  @override
+  String get directSmtpRecipientRejected =>
+      'Alıcı adresi gönderim sunucusu tarafından reddedildi.';
+
+  @override
+  String get directMessageTooLarge =>
+      'İleti, sunucunun kabul ettiği boyutu aşıyor.';
+
+  @override
+  String get directCapabilityMissing =>
+      'Posta sunucusu bu özelliği desteklemiyor.';
+
+  @override
+  String get directQuotaExceeded => 'Posta kutusu dolu.';
+
+  @override
+  String get directRateLimited =>
+      'Sunucu çok fazla istek aldı. Bir süre sonra yeniden denenecek.';
+
+  @override
+  String get directTemporaryFailure =>
+      'Posta sunucusu geçici olarak yanıt vermiyor. Biraz sonra tekrar deneyin.';
 }

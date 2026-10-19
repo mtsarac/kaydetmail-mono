@@ -2901,4 +2901,71 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get directDnsFailure =>
+      'The server name couldn’t be found. Check the address.';
+
+  @override
+  String get directHostUnreachable =>
+      'Can’t reach the mail server. Check the server name and port.';
+
+  @override
+  String get directTlsHandshakeFailed =>
+      'Couldn’t set up a secure connection. Check the security type and port.';
+
+  @override
+  String get directTlsCertificateInvalid =>
+      'The server’s certificate couldn’t be verified; this connection isn’t safe.';
+
+  @override
+  String directTlsHostMismatch(Object host) {
+    return 'The server’s certificate was issued for \"$host\". Try that as the server name.';
+  }
+
+  @override
+  String get directAuthFailed => 'The username or password was rejected.';
+
+  @override
+  String get directAuthRequiresAppPassword =>
+      'This provider doesn’t allow sign-in with your regular password. Create an app password and use that.';
+
+  @override
+  String get directAuthMethodUnsupported =>
+      'The server doesn’t offer a sign-in method we support.';
+
+  @override
+  String get directImapCommandFailed =>
+      'The mail server didn’t accept the request.';
+
+  @override
+  String get directSmtpRejected =>
+      'The sending server didn’t accept the message.';
+
+  @override
+  String get directSmtpSenderRejected =>
+      'The sending server didn’t accept this sender address.';
+
+  @override
+  String get directSmtpRecipientRejected =>
+      'The sending server rejected a recipient address.';
+
+  @override
+  String get directMessageTooLarge =>
+      'The message is larger than the server accepts.';
+
+  @override
+  String get directCapabilityMissing =>
+      'The mail server doesn’t support this feature.';
+
+  @override
+  String get directQuotaExceeded => 'The mailbox is full.';
+
+  @override
+  String get directRateLimited =>
+      'The server received too many requests. It will be retried after a while.';
+
+  @override
+  String get directTemporaryFailure =>
+      'The mail server is temporarily unavailable. Try again shortly.';
 }
