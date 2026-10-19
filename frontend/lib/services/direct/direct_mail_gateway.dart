@@ -54,7 +54,8 @@ part 'direct_gateway/folders.dart';
 part 'direct_gateway/local.dart';
 part 'direct_gateway/mail.dart';
 part 'direct_gateway/scheduled.dart';
-part 'direct_gateway/unsupported.dart';
+part 'direct_gateway/search.dart';
+part 'direct_gateway/sessions.dart';
 
 /// Shared state of the gateway's endpoint groups.
 abstract class _DirectGatewayBase {
@@ -261,14 +262,15 @@ abstract class _DirectGatewayBase {
 /// the mail server over IMAP; changes go to the server first.
 class DirectMailGateway extends _DirectGatewayBase
     with
-        _DirectUnsupportedApi,
+        _DirectSessionsApi,
         _DirectAccountApi,
         _DirectFolderApi,
         _DirectMailApi,
         _DirectActionApi,
         _DirectLocalApi,
         _DirectComposeApi,
-        _DirectScheduledApi
+        _DirectScheduledApi,
+        _DirectSearchApi
     implements MailGateway {
   DirectMailGateway({
     required DirectAccountRuntime runtime,

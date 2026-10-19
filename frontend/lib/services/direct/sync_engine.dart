@@ -196,7 +196,13 @@ class SyncEngine {
         exists: state.exists,
         unseen: state.unseen,
         highestModSeq: state.highestModSeq,
-        oldestSyncedUid: _store.minUid(accountId, folderId),
+        // The frontier of what is known to be complete below the newest mail
+        // is set by the first pass and by backfill only: mail imported out of
+        // order (a search) lowers the lowest stored UID without making
+        // anything in between known.
+        oldestSyncedUid: reachedStart == null
+            ? null
+            : _store.minUid(accountId, folderId),
         backfillComplete: state.exists == 0
             ? true
             : (reachedStart == null
@@ -466,6 +472,60 @@ class SyncEngine {
     );
   }
 
+  // --- Single messages ------------------------------------------------------------------
+
+  /// Stores the messages [uids] of [folderId] without touching the sync
+  /// position: search results from anywhere in the folder. The ones already
+  /// stored are left as they are. Returns the local ids of the new ones.
+  ///
+  /// With [withBodies] the text of each new message is fetched too (messages
+  /// over [maxBodyBytes] keep their headers only): a server search matches
+  /// text inside messages, and the device can only find them again by it if
+  /// it holds that text.
+  Future<List<String>> importMessages(
+    String folderId,
+    List<int> uids, {
+    bool withBodies = false,
+    int maxBodyBytes = 5 * 1024 * 1024,
+  }) async {
+    final folder = _store.folder(accountId, folderId);
+    if (folder == null || !folder.available || !folder.selectable) {
+      return const [];
+    }
+    final stored = _store.uids(accountId, folderId).toSet();
+    final wanted = [
+      for (final uid in uids)
+        if (!stored.contains(uid)) uid,
+    ];
+    if (wanted.isEmpty) return const [];
+    await _ready();
+    final state = await _imap.select(folder.path);
+    if (folder.uidValidity != null && state.uidValidity != folder.uidValidity) {
+      throw DirectMailException(DirectErrorKind.mailboxChanged);
+    }
+    final report = FolderSyncReport();
+    await _ingestBatches(
+      folder,
+      wanted,
+      report,
+      <String, String>{},
+      () => false,
+      newestFirst: true,
+    );
+    if (withBodies) {
+      for (final localId in report.newLocalIds) {
+        final row = _store.message(accountId, localId);
+        if (row == null || (row.size > 0 && row.size > maxBodyBytes)) continue;
+        try {
+          await ensureBody(localId);
+        } on DirectMailException catch (error) {
+          if (error.kind != DirectErrorKind.mailNotFound) rethrow;
+        }
+      }
+    }
+    return report.newLocalIds;
+  }
+
   // --- Older mail ---------------------------------------------------------------------------
 
   /// Fetches up to [count] messages older than the oldest stored one.
@@ -475,7 +535,7 @@ class SyncEngine {
     if (folder == null || folder.backfillComplete || !folder.selectable) {
       return 0;
     }
-    final oldest = _store.minUid(accountId, folderId);
+    final oldest = folder.oldestSyncedUid ?? _store.minUid(accountId, folderId);
     if (oldest == null) return 0;
     await _ready();
     await _imap.select(folder.path);
@@ -495,7 +555,7 @@ class SyncEngine {
       uidValidity: folder.uidValidity ?? 0,
       uidNext: folder.uidNext ?? 0,
       exists: folder.remoteExists ?? 0,
-      oldestSyncedUid: _store.minUid(accountId, folderId),
+      oldestSyncedUid: older.isEmpty ? null : older.first,
       backfillComplete: older.length < count,
     );
     return report.newLocalIds.length;

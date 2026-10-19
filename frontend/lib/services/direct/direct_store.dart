@@ -24,7 +24,59 @@ class DirectStore {
   DirectStore(this._db, {String Function()? newId, DateTime Function()? clock})
     : _newId = newId ?? _randomId,
       _clock = clock ?? DateTime.now {
+    _db.createFunction(
+      functionName: 'kfold',
+      argumentCount: const AllowedArgumentCount(1),
+      deterministic: true,
+      function: (args) {
+        final value = args[0];
+        return value is String ? foldForSearch(value) : null;
+      },
+    );
     _migrate();
+  }
+
+  static final Map<int, String> _plainLetter = {
+    for (final entry in const {
+      'a': 'àáâãäåÀÁÂÃÄÅ',
+      'e': 'èéêëÈÉÊË',
+      'o': 'òóôõøÒÓÔÕØ',
+      'u': 'ùúûÙÚÛ',
+      'n': 'ñÑ',
+      'y': 'ýÿÝ',
+    }.entries)
+      for (final rune in entry.value.runes) rune: entry.key,
+  };
+
+  /// Lower-cases and strips accents, the Turkish way: `İ`, `I`, `ı` and `i`
+  /// are one letter, as are `ç`/`c`, `ğ`/`g`, `ö`/`o`, `ş`/`s` and `ü`/`u`,
+  /// so a search typed on an English keyboard finds Turkish text. (SQLite's
+  /// own `LIKE` only ignores case for ASCII.)
+  static String foldForSearch(String input) {
+    final out = StringBuffer();
+    for (final rune in input.runes) {
+      switch (rune) {
+        case 0x130 || 0x131 || 0x49 || 0x69: // İ ı I i
+          out.write('i');
+        case 0xC7 || 0xE7: // Ç ç
+          out.write('c');
+        case 0x11E || 0x11F: // Ğ ğ
+          out.write('g');
+        case 0xD6 || 0xF6: // Ö ö
+          out.write('o');
+        case 0x15E || 0x15F: // Ş ş
+          out.write('s');
+        case 0xDC || 0xFC: // Ü ü
+          out.write('u');
+        case >= 0x300 && <= 0x36F: // combining marks
+          break;
+        case final r when _plainLetter.containsKey(r):
+          out.write(_plainLetter[r]);
+        default:
+          out.write(String.fromCharCode(rune).toLowerCase());
+      }
+    }
+    return out.toString();
   }
 
   final CommonDatabase _db;
@@ -901,13 +953,13 @@ class DirectStore {
     if (hasAttachments != null) {
       sql.write(' AND has_attachments = ${hasAttachments ? 1 : 0}');
     }
-    final needle = text?.trim() ?? '';
+    final needle = foldForSearch(text?.trim() ?? '');
     if (needle.isNotEmpty) {
       final like = '%${_likeEscape(needle)}%';
       sql.write(
-        " AND (subject LIKE ? ESCAPE '\\' OR from_name LIKE ? ESCAPE '\\' "
-        "OR from_addr LIKE ? ESCAPE '\\' OR to_json LIKE ? ESCAPE '\\' "
-        "OR snippet LIKE ? ESCAPE '\\')",
+        " AND (kfold(subject) LIKE ? ESCAPE '\\' OR kfold(from_name) LIKE ? ESCAPE '\\' "
+        "OR kfold(from_addr) LIKE ? ESCAPE '\\' OR kfold(to_json) LIKE ? ESCAPE '\\' "
+        "OR kfold(snippet) LIKE ? ESCAPE '\\')",
       );
       args.addAll([like, like, like, like, like]);
     }
@@ -975,6 +1027,113 @@ class DirectStore {
             )
             .first['n']
         as int;
+  }
+
+  /// Mail matching every word of [query] (in the subject, the people, the
+  /// preview or the stored body) and every other given filter, across the
+  /// folders chosen. Newest first. [total] counts all matches, not only the
+  /// page.
+  ({List<MessageRow> rows, int total}) searchMessages(
+    String accountId, {
+    String query = '',
+    Iterable<String>? inFolders,
+    Iterable<String> exceptFolders = const [],
+    String? from,
+    String? to,
+    DateTime? since,
+    DateTime? before,
+    bool? isRead,
+    bool? flagged,
+    bool? hasAttachment,
+    String? labelId,
+    String? threadId,
+    required int offset,
+    required int limit,
+  }) {
+    final args = <Object?>[accountId];
+    final where = StringBuffer(
+      'm.account_id = ? AND m.hidden = 0 AND m.uid IS NOT NULL',
+    );
+    void anyOf(List<String> columns, String value) {
+      final like = '%${_likeEscape(foldForSearch(value.trim()))}%';
+      where.write(
+        ' AND (${[for (final c in columns) "kfold($c) LIKE ? ESCAPE '\\'"].join(' OR ')})',
+      );
+      args.addAll(List.filled(columns.length, like));
+    }
+
+    for (final word in foldForSearch(query).split(RegExp(r'\s+'))) {
+      if (word.isEmpty) continue;
+      anyOf(const [
+        'm.subject',
+        'm.from_name',
+        'm.from_addr',
+        'm.to_json',
+        'm.cc_json',
+        'm.snippet',
+        'b.body_text',
+      ], word);
+    }
+    if ((from ?? '').trim().isNotEmpty) {
+      anyOf(const ['m.from_name', 'm.from_addr'], from!);
+    }
+    if ((to ?? '').trim().isNotEmpty) {
+      anyOf(const ['m.to_json', 'm.cc_json', 'm.bcc_json'], to!);
+    }
+    final folders = inFolders?.toList();
+    if (folders != null) {
+      if (folders.isEmpty) return (rows: const <MessageRow>[], total: 0);
+      where.write(
+        ' AND m.folder_id IN (${List.filled(folders.length, '?').join(',')})',
+      );
+      args.addAll(folders);
+    }
+    final except = exceptFolders.toList();
+    if (except.isNotEmpty) {
+      where.write(
+        ' AND m.folder_id NOT IN (${List.filled(except.length, '?').join(',')})',
+      );
+      args.addAll(except);
+    }
+    if (since != null) {
+      where.write(' AND m.sort_ms >= ?');
+      args.add(since.millisecondsSinceEpoch);
+    }
+    if (before != null) {
+      where.write(' AND m.sort_ms < ?');
+      args.add(before.millisecondsSinceEpoch);
+    }
+    if (isRead != null) where.write(' AND m.is_read = ${isRead ? 1 : 0}');
+    if (flagged != null) where.write(' AND m.is_flagged = ${flagged ? 1 : 0}');
+    if (hasAttachment != null) {
+      where.write(' AND m.has_attachments = ${hasAttachment ? 1 : 0}');
+    }
+    if (labelId != null) {
+      where.write(
+        ' AND EXISTS (SELECT 1 FROM d_label_assignments a WHERE a.account_id = m.account_id '
+        'AND a.local_id = m.local_id AND a.label_id = ?)',
+      );
+      args.add(labelId);
+    }
+    if (threadId != null) {
+      where.write(' AND m.thread_id = ?');
+      args.add(threadId);
+    }
+    const from_ =
+        'FROM d_messages m LEFT JOIN d_bodies b '
+        'ON b.account_id = m.account_id AND b.local_id = m.local_id';
+    final total =
+        _db.select('SELECT COUNT(*) AS n $from_ WHERE $where', args).first['n']
+            as int;
+    final rows = [
+      for (final row in _db.select(
+        'SELECT m.* $from_ WHERE $where '
+        'ORDER BY m.sort_ms DESC, m.uid DESC LIMIT ? OFFSET ?',
+        [...args, limit, offset],
+      ))
+        MessageRow._(row),
+    ];
+    return (rows: rows, total: total);
   }
 
   int unreadCount(String accountId, String folderId) =>
