@@ -72,6 +72,9 @@ dependencies:
   flutter_quill: ^11.6.0
   flutter_quill_delta_from_html: ^1.5.3
   vsc_quill_delta_to_html: ^1.0.5
+  # Direct IMAP/SMTP accounts (see docs/adr/0001-direct-mail-engine.md).
+  enough_mail_plus: ^2.3.0
+  basic_utils: ^5.8.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
