@@ -48,6 +48,10 @@ enum DirectErrorKind {
   folderNotFound('mail_folder_not_found', 404, ApiErrorCategory.request),
   mailNotFound('mail_not_found', 404, ApiErrorCategory.request),
   quotaExceeded('quota_exceeded', 507, ApiErrorCategory.request),
+
+  /// The same mailbox is already connected on this device. Same code the
+  /// backend uses.
+  accountExists('mail_account_already_exists', 409, ApiErrorCategory.request),
   rateLimited('rate_limited', 429, ApiErrorCategory.server),
   temporaryFailure('temporary_failure', 503, ApiErrorCategory.server),
 
