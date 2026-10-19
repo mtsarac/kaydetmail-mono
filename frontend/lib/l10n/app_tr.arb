@@ -1398,8 +1398,8 @@
   "directAddEntry": "Sunucusuz bağlan (IMAP/SMTP)",
   "directAddEntryHint": "E-postanız bu cihazdan doğrudan posta sunucunuzla konuşur.",
   "directIntro": "Bu hesap KaydetMail sunucusu olmadan çalışır. Posta bu cihazda şifreli olarak saklanır ve doğrudan posta sunucunuzla eşitlenir.",
-  "directInfoNotifications": "Yeni e-posta bildirimleri yalnızca uygulama açıkken ya da yeni arka plana alındığında gelir.",
-  "directInfoScheduled": "Zamanlanmış iletiler, uygulama açıkken veya bir sonraki açılışta gönderilir.",
+  "directInfoNotifications": "Yeni e-posta bildirimleri uygulama açıkken gelir. Android'de uygulama kapalıyken de yaklaşık 15 dakikada bir kontrol edilir (sistem geciktirebilir); iOS'ta yalnızca uygulama açıkken ya da yeni arka plana alındığında.",
+  "directInfoScheduled": "Zamanlanmış iletiler, uygulama açıkken; Android'de ayrıca yaklaşık 15 dakikalık periyodik kontrol sırasında; aksi halde bir sonraki açılışta gönderilir.",
   "directInfoLocalData": "Etiketler, sabitlenen iletiler, hazır metinler ve imzalar yalnızca bu cihazda tutulur.",
   "directDisplayName": "Görünen ad (isteğe bağlı)",
   "directServerSettings": "Sunucu ayarları",
@@ -1432,5 +1432,5 @@
       "email": {}
     }
   },
-  "directScheduledBanner": "Doğrudan bağlı hesaplardan zamanlanan iletiler, uygulama açıkken veya bir sonraki açılışta gönderilir."
+  "directScheduledBanner": "Doğrudan bağlı hesaplardan zamanlanan iletiler, uygulama açıkken; Android'de ayrıca yaklaşık 15 dakikalık periyodik kontrol sırasında; aksi halde bir sonraki açılışta gönderilir."
 }

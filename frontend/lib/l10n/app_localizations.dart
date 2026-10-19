@@ -5030,13 +5030,13 @@ abstract class AppLocalizations {
   /// No description provided for @directInfoNotifications.
   ///
   /// In tr, this message translates to:
-  /// **'Yeni e-posta bildirimleri yalnızca uygulama açıkken ya da yeni arka plana alındığında gelir.'**
+  /// **'Yeni e-posta bildirimleri uygulama açıkken gelir. Android\'de uygulama kapalıyken de yaklaşık 15 dakikada bir kontrol edilir (sistem geciktirebilir); iOS\'ta yalnızca uygulama açıkken ya da yeni arka plana alındığında.'**
   String get directInfoNotifications;
 
   /// No description provided for @directInfoScheduled.
   ///
   /// In tr, this message translates to:
-  /// **'Zamanlanmış iletiler, uygulama açıkken veya bir sonraki açılışta gönderilir.'**
+  /// **'Zamanlanmış iletiler, uygulama açıkken; Android\'de ayrıca yaklaşık 15 dakikalık periyodik kontrol sırasında; aksi halde bir sonraki açılışta gönderilir.'**
   String get directInfoScheduled;
 
   /// No description provided for @directInfoLocalData.
@@ -5174,7 +5174,7 @@ abstract class AppLocalizations {
   /// No description provided for @directScheduledBanner.
   ///
   /// In tr, this message translates to:
-  /// **'Doğrudan bağlı hesaplardan zamanlanan iletiler, uygulama açıkken veya bir sonraki açılışta gönderilir.'**
+  /// **'Doğrudan bağlı hesaplardan zamanlanan iletiler, uygulama açıkken; Android\'de ayrıca yaklaşık 15 dakikalık periyodik kontrol sırasında; aksi halde bir sonraki açılışta gönderilir.'**
   String get directScheduledBanner;
 }
 

@@ -13,3 +13,6 @@ logs/
 .idea/
 .run/
 .worktrees/
+
+# Real mailbox credentials for manual testing
+docs/test-cred.md

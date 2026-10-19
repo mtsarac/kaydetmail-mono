@@ -1,14 +1,15 @@
 part of '../direct_mail_gateway.dart';
 
-/// Keeping an eye on the Inbox while the app is open.
+/// Keeping an eye on the Inbox while the app is open, and one-off checks
+/// while it is not.
 ///
 /// A server that supports IDLE tells the app the moment mail arrives; one
 /// that does not is asked every minute and a half. Either way a slow
 /// safety check runs too, because a connection can go quiet without saying
 /// so. When the app goes to the background the watch ends and the
-/// connection is closed after its idle period; nothing keeps running for an
-/// app the system has stopped, which is why direct accounts raise no
-/// notifications while the app is closed (see the capabilities).
+/// connection is closed after its idle period. From then on the system's
+/// scheduler wakes the app now and then to run [checkForMail] (see
+/// `direct_background.dart`).
 mixin _DirectWatchApi
     on
         _DirectGatewayBase,
@@ -110,5 +111,23 @@ mixin _DirectWatchApi
     unawaited(_watchSub?.cancel());
     _restartTimer = _pushDebounce = _pollTimer = null;
     _watchSub = null;
+  }
+
+  /// One short pass for the system's background scheduler: sends what is
+  /// due, looks at the Inbox within [budget] and returns the mail that
+  /// arrived since the last look, described for notifications. The first
+  /// look at an Inbox is not news.
+  Future<List<IncomingMail>> checkForMail({
+    Duration budget = const Duration(seconds: 25),
+  }) async {
+    await runDueScheduledSends().catchError((Object _) => 0);
+    if (store.folders(accountId).isEmpty) await _refreshFolderList();
+    final inbox = store.folderByRole(accountId, FolderRole.inbox);
+    if (inbox == null || !inbox.selectable) return const [];
+    final wasSynced = inbox.lastSyncMs != null;
+    final report = await _withEngine(
+      (engine, _) => engine.syncFolder(inbox.folderId, budget: budget),
+    );
+    return wasSynced ? _describe(report.newLocalIds) : const [];
   }
 }

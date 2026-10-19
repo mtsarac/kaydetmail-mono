@@ -75,6 +75,7 @@ dependencies:
   # Direct IMAP/SMTP accounts (see docs/adr/0001-direct-mail-engine.md).
   enough_mail_plus: ^2.3.0
   basic_utils: ^5.8.2
+  workmanager: ^0.10.10
 dev_dependencies:
   flutter_test:
     sdk: flutter

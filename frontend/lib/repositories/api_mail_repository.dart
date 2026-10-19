@@ -38,6 +38,7 @@ import '../services/api_mail_service.dart';
 import '../services/device_identifier_provider.dart';
 import '../services/direct/direct_account_service.dart';
 import '../services/direct/direct_alerts.dart';
+import '../services/direct/direct_background.dart';
 import '../services/mail_notifications.dart';
 import '../services/direct/direct_account_setup.dart';
 import '../services/direct/direct_store.dart';
@@ -272,6 +273,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
     if (_sessions.length == 1) return logout();
     await _signOutSession(session);
     await SessionStore.removeEmail(session.account.email);
+    if (session.account.isDirect) unawaited(DirectBackground.sync());
     if (_activeAccountId == accountId) _activeAccountId = null;
     _touch();
     notifyListeners();
@@ -1097,6 +1099,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
         await gateway.getAccount(),
         mailService: gateway,
       );
+      unawaited(DirectBackground.sync());
       // A freshly added account shows up in the unified mailbox at once.
       _activeAccountId = null;
       _touch();
@@ -1125,6 +1128,10 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
   void setAppActive(bool active) {
     if (_appActive == active) return;
     _appActive = active;
+    DirectBackground.markForeground(
+      active,
+      hasDirectAccount: _sessions.values.any((s) => s.account.isDirect),
+    );
     for (final session in _sessions.values) {
       session.mailService.setForeground(active);
     }

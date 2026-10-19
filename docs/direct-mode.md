@@ -81,16 +81,20 @@ assembled from its endpoint groups.
 
 ## What does not work, and why
 
-* **Notifications with the app closed.** There is no server to push. The app
-  watches the Inbox (IMAP IDLE, or polling every 90 s) while it is open and for
-  ten minutes after it leaves the foreground, and shows local notifications for
-  mail that arrives in that time. Background execution (WorkManager on Android,
-  `BGAppRefreshTask` on iOS) is **not implemented**: it needs native setup that
-  could not be built and tried in the environment this was written in. The sync
-  engine takes a time budget (`FolderSyncReport.stoppedEarly`) so it can be
-  wired up later.
-* **Scheduled send with the app closed.** It goes out the next time the app is
-  opened. The scheduled-sends screen says so.
+* **Notifications with the app closed.** There is no server to push. On
+  Android, WorkManager wakes the app about every 15 minutes (its shortest
+  period; Doze may delay it) while the device is online.
+  `DirectBackground` (`direct_background.dart`) then signs in to each direct
+  account, sends scheduled mail that is due, pulls the Inbox within a time
+  budget (`DirectMailGateway.checkForMail`) and shows local notifications. It
+  stays out of the way while the app is in front (a heartbeat in preferences),
+  because the app watches the Inbox itself (IMAP IDLE, or polling every 90 s)
+  and for ten minutes after it leaves the foreground. **iOS has no background
+  check yet**: it needs `BGAppRefreshTask` entries in `Info.plist` and the
+  AppDelegate, so there new-mail alerts only come in those windows.
+* **Scheduled send with the app closed.** On Android it goes out during the
+  periodic check above; on iOS the next time the app is opened. The
+  scheduled-sends screen says so.
 * **Server-side search for non-ASCII text.** IMAP `SEARCH` needs `CHARSET
   UTF-8`; the client library quotes strings as they are, so such searches stay
   on the device (which folds Turkish letters: `İ ı I i` are one letter, `ş` = `s`).

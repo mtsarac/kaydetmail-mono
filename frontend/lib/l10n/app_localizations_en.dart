@@ -2985,11 +2985,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get directInfoNotifications =>
-      'New-mail notifications arrive only while the app is open or was just sent to the background.';
+      'New-mail notifications arrive while the app is open. On Android the app also checks about every 15 minutes while closed (the system may delay it); on iOS only while it is open or was just sent to the background.';
 
   @override
   String get directInfoScheduled =>
-      'Scheduled messages are sent while the app is open, or the next time it is opened.';
+      'Scheduled messages are sent while the app is open, or on Android during the periodic check (about every 15 minutes); otherwise the next time it is opened.';
 
   @override
   String get directInfoLocalData =>
@@ -3069,5 +3069,5 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get directScheduledBanner =>
-      'Messages scheduled from directly connected accounts are sent while the app is open, or the next time it is opened.';
+      'Messages scheduled from directly connected accounts are sent while the app is open, or on Android during the periodic check (about every 15 minutes); otherwise the next time it is opened.';
 }

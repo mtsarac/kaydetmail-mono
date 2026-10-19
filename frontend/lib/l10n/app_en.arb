@@ -830,8 +830,8 @@
   "directAddEntry": "Connect without a server (IMAP/SMTP)",
   "directAddEntryHint": "Your mail talks to your mail server directly from this device.",
   "directIntro": "This account works without a KaydetMail server. Mail is stored encrypted on this device and syncs straight with your mail server.",
-  "directInfoNotifications": "New-mail notifications arrive only while the app is open or was just sent to the background.",
-  "directInfoScheduled": "Scheduled messages are sent while the app is open, or the next time it is opened.",
+  "directInfoNotifications": "New-mail notifications arrive while the app is open. On Android the app also checks about every 15 minutes while closed (the system may delay it); on iOS only while it is open or was just sent to the background.",
+  "directInfoScheduled": "Scheduled messages are sent while the app is open, or on Android during the periodic check (about every 15 minutes); otherwise the next time it is opened.",
   "directInfoLocalData": "Labels, pinned mail, saved texts and signatures are kept on this device only.",
   "directDisplayName": "Display name (optional)",
   "directServerSettings": "Server settings",
@@ -864,5 +864,5 @@
       "email": {}
     }
   },
-  "directScheduledBanner": "Messages scheduled from directly connected accounts are sent while the app is open, or the next time it is opened."
+  "directScheduledBanner": "Messages scheduled from directly connected accounts are sent while the app is open, or on Android during the periodic check (about every 15 minutes); otherwise the next time it is opened."
 }

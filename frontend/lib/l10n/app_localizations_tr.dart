@@ -2842,11 +2842,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get directInfoNotifications =>
-      'Yeni e-posta bildirimleri yalnızca uygulama açıkken ya da yeni arka plana alındığında gelir.';
+      'Yeni e-posta bildirimleri uygulama açıkken gelir. Android\'de uygulama kapalıyken de yaklaşık 15 dakikada bir kontrol edilir (sistem geciktirebilir); iOS\'ta yalnızca uygulama açıkken ya da yeni arka plana alındığında.';
 
   @override
   String get directInfoScheduled =>
-      'Zamanlanmış iletiler, uygulama açıkken veya bir sonraki açılışta gönderilir.';
+      'Zamanlanmış iletiler, uygulama açıkken; Android\'de ayrıca yaklaşık 15 dakikalık periyodik kontrol sırasında; aksi halde bir sonraki açılışta gönderilir.';
 
   @override
   String get directInfoLocalData =>
@@ -2925,5 +2925,5 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get directScheduledBanner =>
-      'Doğrudan bağlı hesaplardan zamanlanan iletiler, uygulama açıkken veya bir sonraki açılışta gönderilir.';
+      'Doğrudan bağlı hesaplardan zamanlanan iletiler, uygulama açıkken; Android\'de ayrıca yaklaşık 15 dakikalık periyodik kontrol sırasında; aksi halde bir sonraki açılışta gönderilir.';
 }

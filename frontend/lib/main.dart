@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'app.dart';
 import 'config/app_config.dart';
+import 'services/direct/direct_background.dart';
 import 'services/firebase_monitoring.dart';
 import 'services/push_service.dart';
 import 'state/app_settings_controller.dart';
@@ -17,6 +20,7 @@ void main() async {
   // Mail that direct accounts receive is announced from this device, so
   // notifications must work without Firebase.
   await PushService.initializeLocal();
+  unawaited(DirectBackground.sync());
   await FirebaseMonitoring.initialize();
   if (!AppConfig.pushEnabled || !PushService.isSupportedPlatform) return;
   // Best-effort: without Firebase config files this no-ops and the app runs
