@@ -1,8 +1,14 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:enough_mail_plus/enough_mail.dart'
-    show MailAddress, MediaType, MessageBuilder;
+    show
+        ContentDisposition,
+        ContentDispositionHeader,
+        MailAddress,
+        MediaType,
+        MessageBuilder;
 
 import 'direct_errors.dart';
 import 'mail_recipients.dart';
@@ -136,6 +142,65 @@ class MessageComposer {
   static String _header(String value) =>
       value.replaceAll(RegExp(r'[\r\n]+'), ' ').trim();
 
+  /// Adds [attachment]. A file name with anything outside plain ASCII is
+  /// written the way RFC 2231 says (`filename*=UTF-8''…`) next to an ASCII
+  /// fallback: sent as raw UTF-8 it reaches other mail programs as garbage
+  /// (`ş` becomes `Å`).
+  static void _attach(MessageBuilder builder, ComposeAttachment attachment) {
+    final name = _header(attachment.name);
+    final mediaType = MediaType.fromText(
+      (attachment.mimeType ?? '').contains('/')
+          ? attachment.mimeType!
+          : 'application/octet-stream',
+    );
+    final plain =
+        RegExp(r'^[\x20-\x7e]*$').hasMatch(name) &&
+        !name.contains('"') &&
+        !name.contains(r'\');
+    if (plain) {
+      builder.addBinary(attachment.bytes, mediaType, filename: name);
+      return;
+    }
+    final fallback = name.replaceAll(RegExp(r'[^\x20-\x7e]|["\\]'), '_');
+    final encoded = "UTF-8''${_percentEncode(name)}";
+    final disposition = ContentDispositionHeader.from(
+      ContentDisposition.attachment,
+      filename: fallback,
+      size: attachment.bytes.length,
+    )..parameters['filename*'] = encoded;
+    builder
+        .addBinary(
+          attachment.bytes,
+          mediaType,
+          disposition: disposition,
+          filename: fallback,
+        )
+        .setContentType(
+          mediaType,
+          name: fallback,
+          parameters: {'name*': encoded},
+        );
+  }
+
+  /// RFC 5987 `attr-char` percent-encoding of the UTF-8 bytes of [value].
+  static String _percentEncode(String value) {
+    const keep = "!#\$&+-.^_`|~";
+    final out = StringBuffer();
+    for (final byte in utf8.encode(value)) {
+      final char = String.fromCharCode(byte);
+      final isAlnum =
+          (byte >= 0x30 && byte <= 0x39) ||
+          (byte >= 0x41 && byte <= 0x5a) ||
+          (byte >= 0x61 && byte <= 0x7a);
+      if (isAlnum || (byte < 0x80 && keep.contains(char))) {
+        out.write(char);
+      } else {
+        out.write('%${byte.toRadixString(16).toUpperCase().padLeft(2, '0')}');
+      }
+    }
+    return out.toString();
+  }
+
   static ComposedMessage compose(ComposeInput input) {
     final to = input.to.map(_address).toList();
     final cc = input.cc.map(_address).toList();
@@ -187,15 +252,7 @@ class MessageComposer {
         builder.text = input.bodyText;
       }
       for (final attachment in input.attachments) {
-        builder.addBinary(
-          attachment.bytes,
-          MediaType.fromText(
-            (attachment.mimeType ?? '').contains('/')
-                ? attachment.mimeType!
-                : 'application/octet-stream',
-          ),
-          filename: _header(attachment.name),
-        );
+        _attach(builder, attachment);
       }
       return builder.buildMimeMessage().renderMessage();
     }

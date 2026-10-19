@@ -374,6 +374,30 @@ void main() {
       expect(again.imported, 0);
     });
 
+    test('a hit the device holds without its text gets the text', () async {
+      rig = DirectRig();
+      rig.imap.add('INBOX', _mail('a', body: 'gizlikelime'));
+      await load();
+      expect(
+        (await rig.gateway.search(
+          query: 'gizlikelime',
+          resolveFolder: _resolve,
+        )).items,
+        isEmpty,
+      );
+      final result = await rig.gateway.searchRemote(query: 'gizlikelime');
+      expect(result.matched, 1);
+      expect(result.imported, 0, reason: 'the message itself was already here');
+      expect(result.complete, isTrue);
+      expect(
+        (await rig.gateway.search(
+          query: 'gizlikelime',
+          resolveFolder: _resolve,
+        )).items,
+        hasLength(1),
+      );
+    });
+
     test(
       'takes a limited number at a time and says how many are left',
       () async {
@@ -386,11 +410,15 @@ void main() {
         await load();
         final first = await rig.gateway.searchRemote(query: 'ortak');
         expect(first.matched, 130);
-        expect(first.imported, 40);
+        expect(
+          first.imported,
+          38,
+          reason: '40 messages worked on, 2 were here',
+        );
         expect(
           first.remaining,
-          88,
-          reason: '130 matched, 2 already here, 40 taken',
+          90,
+          reason: '130 matched, none with its text yet, 40 taken',
         );
         expect(first.complete, isFalse);
         var rounds = 1;
@@ -400,7 +428,7 @@ void main() {
           rounds++;
         }
         expect(last.complete, isTrue);
-        expect(rounds, 4, reason: '40 + 40 + 40 + the last 8');
+        expect(rounds, 4, reason: '40 + 40 + 40 + the last 10');
       },
     );
 

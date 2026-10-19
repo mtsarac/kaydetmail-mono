@@ -163,6 +163,16 @@ mixin _DirectFolderApi on _DirectGatewayBase {
       (imap) => imap.renameFolder(folder.path, newPath),
       userInitiated: true,
     );
+    // Believe the server's own list: a server that put the folder somewhere
+    // other than asked must not leave this device holding a wrong path.
+    final listed = await _run(
+      (imap) => imap.listFolders(),
+      userInitiated: true,
+    );
+    if (!listed.any((f) => f.path == newPath)) {
+      await _refreshFolderList(userInitiated: true);
+      throw DirectMailException(DirectErrorKind.imapCommandFailed);
+    }
     store.renameFolderTree(accountId, folder.path, newPath, newName: name);
     await _refreshFolderList(userInitiated: true);
     return _folderView(folder.folderId);

@@ -478,10 +478,10 @@ class SyncEngine {
   /// position: search results from anywhere in the folder. The ones already
   /// stored are left as they are. Returns the local ids of the new ones.
   ///
-  /// With [withBodies] the text of each new message is fetched too (messages
-  /// over [maxBodyBytes] keep their headers only): a server search matches
-  /// text inside messages, and the device can only find them again by it if
-  /// it holds that text.
+  /// With [withBodies] the text of each of them, new or already stored
+  /// without it, is fetched too (messages over [maxBodyBytes] keep their
+  /// headers only): a server search matches text inside messages, and the
+  /// device can only find them again by it if it holds that text.
   Future<List<String>> importMessages(
     String folderId,
     List<int> uids, {
@@ -493,27 +493,39 @@ class SyncEngine {
       return const [];
     }
     final stored = _store.uids(accountId, folderId).toSet();
-    final wanted = [
+    final fresh = [
       for (final uid in uids)
         if (!stored.contains(uid)) uid,
     ];
-    if (wanted.isEmpty) return const [];
+    final known = [
+      for (final uid in uids)
+        if (stored.contains(uid)) uid,
+    ];
+    if (fresh.isEmpty && (!withBodies || known.isEmpty)) return const [];
     await _ready();
     final state = await _imap.select(folder.path);
     if (folder.uidValidity != null && state.uidValidity != folder.uidValidity) {
       throw DirectMailException(DirectErrorKind.mailboxChanged);
     }
     final report = FolderSyncReport();
-    await _ingestBatches(
-      folder,
-      wanted,
-      report,
-      <String, String>{},
-      () => false,
-      newestFirst: true,
-    );
+    if (fresh.isNotEmpty) {
+      await _ingestBatches(
+        folder,
+        fresh,
+        report,
+        <String, String>{},
+        () => false,
+        newestFirst: true,
+      );
+    }
     if (withBodies) {
-      for (final localId in report.newLocalIds) {
+      final wanted = [
+        ...report.newLocalIds,
+        for (final uid in known)
+          if (_store.messageByUid(accountId, folderId, uid) case final row?)
+            if (!row.bodyLoaded) row.localId,
+      ];
+      for (final localId in wanted) {
         final row = _store.message(accountId, localId);
         if (row == null || (row.size > 0 && row.size > maxBodyBytes)) continue;
         try {

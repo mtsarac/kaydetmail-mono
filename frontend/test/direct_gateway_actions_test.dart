@@ -454,6 +454,32 @@ void main() {
       },
     );
 
+    test(
+      'a server that renames somewhere else does not corrupt the paths',
+      () async {
+        rig = DirectRig();
+        rig.imap.addFolder('Projeler');
+        rig.imap.addFolder('Projeler/Alt');
+        await rig.gateway.getFolders();
+        final alt = (await rig.gateway.getFolders()).firstWhere(
+          (f) => f.fullName == 'Projeler/Alt',
+        );
+        // Asked for "Üst", it files the folder under its old parent.
+        rig.imap.renameLandsAt = (from, to) => 'Projeler/$to';
+        await expectLater(
+          rig.gateway.setFolderParent(alt.id, null),
+          throwsA(isA<DirectMailException>()),
+        );
+        final paths = (await rig.gateway.getFolders()).map((f) => f.fullName);
+        expect(paths, contains('Projeler/Alt'));
+        expect(
+          paths,
+          isNot(contains('Alt')),
+          reason: 'the store says what the server says',
+        );
+      },
+    );
+
     test('standard folders cannot be renamed, moved or deleted', () async {
       rig = DirectRig();
       await rig.gateway.getFolders();

@@ -227,4 +227,47 @@ void main() {
     expect(headers.to.single.displayName, 'Ali Veli');
     expect(utf8.encode(message.source).length, message.source.length);
   });
+
+  test('a Turkish file name is written so that every program reads it', () {
+    final message = _compose(
+      attachments: [
+        ComposeAttachment(
+          name: 'rapor şubat “özet”.pdf',
+          bytes: Uint8List.fromList([1, 2, 3]),
+          mimeType: 'application/pdf',
+        ),
+      ],
+    );
+    expect(
+      message.source.codeUnits.every((c) => c < 128),
+      isTrue,
+      reason: 'raw UTF-8 in a header reaches others as garbage',
+    );
+    expect(message.source, contains("filename*=UTF-8''rapor%20%C5%9Fubat"));
+    final processed = MimeProcessor.processBody(
+      MimeMessage.parseFromText(message.source),
+    );
+    expect(processed.parts.single.filename, 'rapor şubat “özet”.pdf');
+  });
+
+  test('a plain file name stays as it is; quotes are not trusted', () {
+    final plain = _compose(
+      attachments: [
+        ComposeAttachment(
+          name: 'rapor.pdf',
+          bytes: Uint8List(1),
+          mimeType: 'application/pdf',
+        ),
+      ],
+    );
+    expect(plain.source, contains('filename="rapor.pdf"'));
+    expect(plain.source, isNot(contains('filename*')));
+    final odd = _compose(
+      attachments: [ComposeAttachment(name: 'a"b.txt', bytes: Uint8List(1))],
+    );
+    final processed = MimeProcessor.processBody(
+      MimeMessage.parseFromText(odd.source),
+    );
+    expect(processed.parts.single.filename, 'a"b.txt');
+  });
 }

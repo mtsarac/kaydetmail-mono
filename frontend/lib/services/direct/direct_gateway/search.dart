@@ -100,6 +100,7 @@ mixin _DirectSearchApi on _DirectGatewayBase, _DirectMailApi, _DirectActionApi {
     );
     var matched = 0;
     var imported = 0;
+    var worked = 0;
     var remaining = 0;
     for (final folder in folders) {
       final uids = await _run((imap) async {
@@ -107,13 +108,19 @@ mixin _DirectSearchApi on _DirectGatewayBase, _DirectMailApi, _DirectActionApi {
         return imap.search(folder.path, wanted);
       }, userInitiated: true);
       matched += uids.length;
+      // What still has to come over: messages the device lacks, and ones it
+      // holds without their text (which a local search cannot see into).
       final stored = store.uids(accountId, folder.folderId).toSet();
-      final fresh = [
+      final needed = [
         for (final uid in uids.reversed)
-          if (!stored.contains(uid)) uid,
+          if (!stored.contains(uid))
+            uid
+          else if (store.messageByUid(accountId, folder.folderId, uid)
+              case final row? when !row.bodyLoaded)
+            uid,
       ];
-      final room = _importBudget - imported;
-      final take = fresh.take(room < 0 ? 0 : room).toList();
+      final room = _importBudget - worked;
+      final take = needed.take(room < 0 ? 0 : room).toList();
       if (take.isNotEmpty) {
         final added = await _withEngine(
           (engine, _) =>
@@ -121,8 +128,9 @@ mixin _DirectSearchApi on _DirectGatewayBase, _DirectMailApi, _DirectActionApi {
           userInitiated: true,
         );
         imported += added.length;
+        worked += take.length;
       }
-      remaining += fresh.length - take.length;
+      remaining += needed.length - take.length;
     }
     return RemoteSearchResult(
       matched: matched,

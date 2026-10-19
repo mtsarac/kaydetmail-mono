@@ -408,9 +408,15 @@ class FakeImapService implements ImapService {
     addFolder(path);
   }
 
+  /// Makes the next rename land somewhere other than asked, like a server
+  /// that reads a new name relative to the old folder's parent.
+  String Function(String from, String to)? renameLandsAt;
+
   @override
-  Future<void> renameFolder(String from, String to) async {
-    _enter('renameFolder', '$from -> $to');
+  Future<void> renameFolder(String from, String requested) async {
+    _enter('renameFolder', '$from -> $requested');
+    final to = renameLandsAt?.call(from, requested) ?? requested;
+    renameLandsAt = null;
     final old = _folder(from);
     // Like a real server (RFC 3501 §6.3.5): everything below moves with it.
     final affected = [
