@@ -34,6 +34,12 @@ class IntegrationEnvironment {
       int.tryParse(_value('MAILCLIENT_TEST_GREENMAIL_SMTP') ?? '') ?? 3025;
   static String get user =>
       _value('MAILCLIENT_TEST_GREENMAIL_USER') ?? 'test@localhost';
+
+  /// A second mailbox, so the gateway tests can run beside the IMAP adapter
+  /// tests (Flutter runs test files in parallel) without emptying each
+  /// other's folders. Configure it in the server next to [user].
+  static String get gatewayUser =>
+      _value('MAILCLIENT_TEST_GREENMAIL_GATEWAY_USER') ?? 'gateway@localhost';
   static String get password =>
       _value('MAILCLIENT_TEST_GREENMAIL_PASSWORD') ?? 'test123';
 

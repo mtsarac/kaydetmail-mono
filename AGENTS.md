@@ -10,6 +10,8 @@ Kaydetmail is a Turkish-language, multi-account mail client. `frontend/` is an o
 
 `lib/app.dart` restores sessions and owns authentication, biometric lock, notification routing, sync scheduling, and outbox recovery. UI code depends on `MailRepository` (`lib/repositories/mail_repository.dart`), a `ChangeNotifier`; `ApiMailRepository` is its sole implementation and owns one account-scoped session per mailbox.
 
+A mailbox can also be connected directly (`AccountMode.direct`): `ApiMailRepository` then uses `DirectMailGateway` (`lib/services/direct/`) over a local SQLite store plus IMAP/SMTP instead of `ApiMailService`. Both implement `MailGateway`; screens branch only on `MailRepository.capabilitiesOf`. See `docs/direct-mode.md`.
+
 Typical flow:
 
 1. Screen/widget calls `MailRepository` and listens for notifications.
@@ -117,6 +119,7 @@ Backend tests use xUnit, `WebApplicationFactory<Program>`, EF Core InMemory wher
 
 External integrations are opt-in locally:
 
+- Frontend direct-mode tests against GreenMail: `MAILCLIENT_TEST_GREENMAIL=1 flutter test test/integration` (users `test@localhost` and `gateway@localhost`, see `docs/direct-mode.md`).
 - PostgreSQL: set `MAILCLIENT_TEST_POSTGRES_ADMIN`.
 - GreenMail: set `MAILCLIENT_TEST_GREENMAIL=1` or relevant `MAILCLIENT_TEST_GREENMAIL_*` values.
 - `MAILCLIENT_SKIP_INTEGRATION` skips external-service tests.

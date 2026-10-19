@@ -111,7 +111,7 @@ assembled from its endpoint groups.
 
   ```bash
   docker run -d -p 3143:3143 -p 3025:3025 \
-    -e GREENMAIL_OPTS="-Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=test@localhost:test123" \
+    -e GREENMAIL_OPTS="-Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=test@localhost:test123,gateway@localhost:test123" \
     greenmail/standalone:2.1.8
   MAILCLIENT_TEST_GREENMAIL=1 flutter test test/integration
   ```

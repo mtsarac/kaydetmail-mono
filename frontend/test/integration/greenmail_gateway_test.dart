@@ -26,7 +26,7 @@ import '../support/integration_environment.dart';
 /// end to end (send, receive, flag, move, rename, draft, search, watch).
 void main() {
   final skip = IntegrationEnvironment.skipUnlessGreenMail;
-  const self = 'test@localhost';
+  final self = IntegrationEnvironment.gatewayUser;
 
   void check(String name, Future<void> Function() body) =>
       test(name, body, skip: skip);
@@ -38,7 +38,7 @@ void main() {
       host: IntegrationEnvironment.host,
       port: IntegrationEnvironment.imapPort,
       security: MailSecurity.startTls,
-      username: IntegrationEnvironment.user,
+      username: IntegrationEnvironment.gatewayUser,
     ),
     password: IntegrationEnvironment.password,
     transport: ImapTransport.plaintext,
@@ -73,13 +73,13 @@ void main() {
           host: IntegrationEnvironment.host,
           port: IntegrationEnvironment.imapPort,
           security: MailSecurity.startTls,
-          username: IntegrationEnvironment.user,
+          username: IntegrationEnvironment.gatewayUser,
         ),
         smtp: DirectEndpoint(
           host: IntegrationEnvironment.host,
           port: IntegrationEnvironment.smtpPort,
           security: MailSecurity.startTls,
-          username: IntegrationEnvironment.user,
+          username: IntegrationEnvironment.gatewayUser,
         ),
       ),
       credentials: DirectCredentials(
@@ -366,7 +366,7 @@ void main() {
         host: IntegrationEnvironment.host,
         port: IntegrationEnvironment.smtpPort,
         security: MailSecurity.startTls,
-        username: IntegrationEnvironment.user,
+        username: IntegrationEnvironment.gatewayUser,
       ),
       password: IntegrationEnvironment.password,
       clientDomain: 'example.org',
@@ -374,7 +374,7 @@ void main() {
     );
     await other.send(
       MessageComposer.compose(
-        const ComposeInput(
+        ComposeInput(
           fromAddress: 'ali@example.org',
           to: [self],
           subject: 'Dışarıdan',
