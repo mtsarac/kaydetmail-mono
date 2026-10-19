@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../models/account_capabilities.dart';
 import '../models/account_notification_settings.dart';
 import '../models/account_sync_scope.dart';
 import '../models/compose_prefill.dart';
@@ -452,6 +453,10 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
   @override
   List<MailAccount> get accounts =>
       _sessions.values.map((s) => s.account).toList(growable: false);
+
+  @override
+  AccountCapabilities capabilitiesOf(String accountId) =>
+      _sessions[accountId]?.capabilities ?? const AccountCapabilities.backend();
 
   @override
   String? get activeAccountId => _activeAccountId;

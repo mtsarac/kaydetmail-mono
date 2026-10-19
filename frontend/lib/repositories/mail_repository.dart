@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../models/account_capabilities.dart';
 import '../models/account_notification_settings.dart';
 import '../models/account_sync_scope.dart';
 import '../models/compose_prefill.dart';
@@ -149,6 +150,13 @@ abstract class MailRepository extends ChangeNotifier {
 
   /// Sending accounts for the Compose "Kimden" picker.
   List<MailAccount> get accounts;
+
+  /// What [accountId] can do. Screens use this to hide or label features a
+  /// connection kind cannot offer (device sessions, guaranteed scheduled
+  /// send, …) instead of branching on how the account connects. Unknown
+  /// accounts get the backend profile, the long-standing default.
+  AccountCapabilities capabilitiesOf(String accountId) =>
+      const AccountCapabilities.backend();
 
   /// Sets or clears (`null`/blank) [accountId]'s signature, synced to the
   /// backend so every device signed into that account sees it. Throws
