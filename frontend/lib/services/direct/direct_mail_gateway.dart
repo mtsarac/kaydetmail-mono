@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:enough_mail_plus/enough_mail.dart' show DateCodec, MimeMessage;
+import 'package:http/http.dart' as http;
+
 import '../../models/account_capabilities.dart';
 import '../../models/account_notification_settings.dart';
 import '../../models/compose_limits.dart';
@@ -30,17 +33,22 @@ import 'direct_account_setup.dart';
 import 'direct_connection.dart';
 import 'direct_credential_store.dart';
 import 'direct_errors.dart';
+import 'direct_send_journal.dart';
 import 'direct_meta_store.dart';
 import 'direct_store.dart';
 import 'email_mapper.dart';
 import 'imap_flags.dart';
 import 'imap_models.dart';
 import 'imap_service.dart';
+import 'mail_recipients.dart';
+import 'mail_threading.dart';
+import 'message_composer.dart';
 import 'mime_processor.dart';
 import 'sync_engine.dart';
 
 part 'direct_gateway/account.dart';
 part 'direct_gateway/actions.dart';
+part 'direct_gateway/compose.dart';
 part 'direct_gateway/folders.dart';
 part 'direct_gateway/local.dart';
 part 'direct_gateway/mail.dart';
@@ -69,6 +77,11 @@ abstract class _DirectGatewayBase {
       StreamController<GatewayEvent>.broadcast();
 
   Stream<GatewayEvent> get events => _events.stream;
+
+  /// The outgoing server refused the account's password. Sending stays off
+  /// until the user supplies a new one ([reconnect]), because repeating a
+  /// refused sign-in is what gets an address blocked.
+  DirectMailException? _smtpRefusal;
 
   String get accountId => runtime.accountId;
   DirectAccountConfig get config => runtime.config;
@@ -245,7 +258,8 @@ class DirectMailGateway extends _DirectGatewayBase
         _DirectFolderApi,
         _DirectMailApi,
         _DirectActionApi,
-        _DirectLocalApi
+        _DirectLocalApi,
+        _DirectComposeApi
     implements MailGateway {
   DirectMailGateway({
     required DirectAccountRuntime runtime,

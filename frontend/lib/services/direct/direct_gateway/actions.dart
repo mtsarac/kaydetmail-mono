@@ -266,6 +266,11 @@ mixin _DirectActionApi on _DirectGatewayBase {
   Future<FolderRow> _roleFolder(FolderRole role) async {
     final existing = store.folderByRole(accountId, role);
     if (existing != null && existing.selectable) return existing;
+    // The folder may exist on the server without this device having listed
+    // it yet: look before creating.
+    await _refreshFolderList(userInitiated: true);
+    final listed = store.folderByRole(accountId, role);
+    if (listed != null && listed.selectable) return listed;
     final name = switch (role) {
       FolderRole.archive => 'Archive',
       FolderRole.trash => 'Trash',

@@ -13,7 +13,9 @@ mixin _DirectAccountApi on _DirectGatewayBase {
       email: config.email,
       displayName: name.isEmpty ? null : name,
       provider: AccountProvider.inferFromEmail(config.email),
-      status: connection.state == DirectConnectionState.needsReauthentication
+      status:
+          connection.state == DirectConnectionState.needsReauthentication ||
+              _smtpRefusal != null
           ? MailAccountStatus.needsReauthentication
           : MailAccountStatus.active,
       signature: store.setting(accountId, _signatureKey),
@@ -83,6 +85,7 @@ mixin _DirectAccountApi on _DirectGatewayBase {
     );
     // One real sign-in decides: a refusal throws here and keeps the lock.
     await _run((_) async {}, userInitiated: true);
+    _smtpRefusal = null;
     store.saveAccount(next);
     await runtime.persistCredentials();
     _emit(const GatewayEvent(GatewayEventKind.online));

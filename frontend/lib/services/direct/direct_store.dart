@@ -281,6 +281,24 @@ class DirectStore {
         PRIMARY KEY (account_id, identity_id)
       )''',
     ],
+    // 5 — what was done about each send attempt, keyed by the idempotency key
+    // the app gives it, so a retry never delivers a second copy and a send
+    // whose outcome is unknown is never repeated by itself.
+    [
+      '''
+      CREATE TABLE d_sends (
+        account_id TEXT NOT NULL,
+        send_key TEXT NOT NULL,
+        state TEXT NOT NULL,
+        message_id TEXT NOT NULL,
+        local_id TEXT,
+        thread_id TEXT,
+        copy_saved INTEGER NOT NULL DEFAULT 0,
+        started_ms INTEGER NOT NULL,
+        updated_ms INTEGER NOT NULL,
+        PRIMARY KEY (account_id, send_key)
+      )''',
+    ],
   ];
 
   void _migrate() {

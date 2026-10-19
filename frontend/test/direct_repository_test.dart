@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/direct_rig.dart';
 import 'support/fake_imap_service.dart';
+import 'support/fake_smtp_sender.dart';
 import 'support/memory_token_storage.dart';
 
 DirectAccountSetup _setup(String email) => DirectAccountSetup(
@@ -47,12 +48,14 @@ void main() {
   late MailCache cache;
   late MemoryTokenStorage keystore;
   late FakeImapService imap;
+  late FakeSmtpSender smtp;
 
   DirectAccountService accounts({
     Duration staleAfter = const Duration(minutes: 5),
   }) => DirectAccountService(
     credentials: DirectCredentialStore(storage: keystore),
     imapFactory: (_, _) => imap,
+    smtpFactory: (_, _, _) => smtp,
     suggestHost: (_) async => null,
     syncOptions: const SyncOptions(prefetchBodies: 0),
     staleAfter: staleAfter,
@@ -69,6 +72,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     cache = MailCache.inMemory();
     keystore = MemoryTokenStorage();
+    smtp = FakeSmtpSender();
     imap = FakeImapService()
       ..addFolder('INBOX', use: FolderRole.inbox)
       ..addFolder('Sent', use: FolderRole.sent);

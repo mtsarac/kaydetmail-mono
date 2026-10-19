@@ -41,59 +41,6 @@ mixin _DirectUnsupportedApi on _DirectGatewayBase {
     String? labelId,
   }) async => throw _unsupported();
 
-  Future<Email> getDraft(
-    String id, {
-    required MailFolder Function(String folderId) resolveFolder,
-  }) async => throw _unsupported();
-  Future<DraftResult> createDraft({
-    required List<String> to,
-    List<String> cc = const [],
-    List<String> bcc = const [],
-    String subject = '',
-    String bodyText = '',
-    String? bodyHtml,
-    List<Attachment> attachments = const [],
-    String? replySourceMailId,
-    String? identityId,
-  }) async => throw _unsupported();
-  Future<DraftResult> updateDraft(
-    String id, {
-    required List<String> to,
-    List<String> cc = const [],
-    List<String> bcc = const [],
-    String subject = '',
-    String bodyText = '',
-    String? bodyHtml,
-    List<Attachment> attachments = const [],
-    String? replySourceMailId,
-    String? identityId,
-  }) async => throw _unsupported();
-  Future<void> deleteDraft(String id) async => throw _unsupported();
-  Future<SendDraftResult> sendDraft(
-    String id, {
-    required String idempotencyKey,
-  }) async => throw _unsupported();
-  Future<ComposePrefill> getComposePrefill(
-    String sourceMailId,
-    String kind,
-  ) async => throw _unsupported();
-  Future<ComposeLimits> getComposeLimits() async => throw _unsupported();
-  Future<SendResult> sendMail({
-    required List<String> to,
-    List<String> cc = const [],
-    List<String> bcc = const [],
-    required String subject,
-    String bodyText = '',
-    String? bodyHtml,
-    List<Attachment> attachments = const [],
-    String? replySourceMailId,
-    String? identityId,
-    bool requestReadReceipt = false,
-    required String idempotencyKey,
-    void Function(int sent, int total)? onProgress,
-    Future<void>? abortTrigger,
-  }) async => throw _unsupported();
-
   Future<ScheduledSend> scheduleSend({
     required List<String> to,
     List<String> cc = const [],

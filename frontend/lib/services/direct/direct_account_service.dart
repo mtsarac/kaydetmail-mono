@@ -30,7 +30,7 @@ class DirectAccountService {
   DirectAccountService({
     DirectCredentialStore? credentials,
     ImapFactory? imapFactory,
-    this.smtpVerifier,
+    SmtpFactory? smtpFactory,
     CertificateHostSuggester? suggestHost,
     this._isOnline,
     String Function()? newId,
@@ -38,12 +38,13 @@ class DirectAccountService {
     this.staleAfter = const Duration(seconds: 30),
   }) : credentials = credentials ?? DirectCredentialStore(),
        _imapFactory = imapFactory ?? _realImap,
+       _smtpFactory = smtpFactory ?? defaultSmtpFactory,
        _suggestHost = suggestHost ?? CertificateHint.forServer,
        _newId = newId ?? _randomId;
 
   final DirectCredentialStore credentials;
   final ImapFactory _imapFactory;
-  final SmtpVerifier? smtpVerifier;
+  final SmtpFactory _smtpFactory;
   final CertificateHostSuggester _suggestHost;
   final Future<bool> Function()? _isOnline;
   final String Function() _newId;
@@ -76,14 +77,24 @@ class DirectAccountService {
     } finally {
       await imap.disconnect();
     }
-    final verifier = smtpVerifier;
-    if (verifier != null) {
-      try {
-        await verifier(setup.smtp, setup.effectiveSmtpPassword);
-      } on DirectMailException catch (error) {
-        throw await _explainCertificate(error, setup.smtp);
-      }
+    try {
+      // Signing in to the outgoing server proves the settings and password;
+      // nothing is sent.
+      await _smtpFactory(
+        setup.smtp,
+        setup.effectiveSmtpPassword,
+        _domainOf(setup.email),
+      ).verify();
+    } on DirectMailException catch (error) {
+      throw await _explainCertificate(error, setup.smtp);
     }
+  }
+
+  static String _domainOf(String email) {
+    final at = email.lastIndexOf('@');
+    return at < 0 || at == email.length - 1
+        ? 'localhost'
+        : email.substring(at + 1).trim();
   }
 
   Future<DirectMailException> _explainCertificate(
@@ -165,6 +176,7 @@ class DirectAccountService {
       config: config,
       credentials: secrets,
       imapFactory: _imapFactory,
+      smtpFactory: _smtpFactory,
       credentialStore: credentials,
       isOnline: _isOnline,
     );

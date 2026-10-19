@@ -11,6 +11,7 @@ import 'package:kaydetmail/services/direct/sync_engine.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'fake_imap_service.dart';
+import 'fake_smtp_sender.dart';
 
 const rigAccountId = 'acc';
 const rigAddress = 'me@example.com';
@@ -36,6 +37,8 @@ class DirectRig {
     bool addInbox = true,
     String namespacePrefix = '',
     String delimiter = '/',
+    String smtpHost = 'smtp.example.com',
+    bool saveSentCopy = true,
   }) : clock = TestClock() {
     imap = capabilities == null
         ? FakeImapService(
@@ -50,7 +53,7 @@ class DirectRig {
     if (addInbox) imap.addFolder('INBOX', use: FolderRole.inbox);
     store = DirectStore(sqlite3.openInMemory(), clock: clock.call);
     runtime = DirectAccountRuntime(
-      config: const DirectAccountConfig(
+      config: DirectAccountConfig(
         id: rigAccountId,
         email: rigAddress,
         displayName: 'Ben',
@@ -60,8 +63,9 @@ class DirectRig {
           security: MailSecurity.sslOnConnect,
           username: rigAddress,
         ),
+        saveSentCopy: saveSentCopy,
         smtp: DirectEndpoint(
-          host: 'smtp.example.com',
+          host: smtpHost,
           port: 465,
           security: MailSecurity.sslOnConnect,
           username: rigAddress,
@@ -69,6 +73,7 @@ class DirectRig {
       ),
       credentials: const DirectCredentials(imapPassword: 'secret'),
       imapFactory: (_, _) => imap,
+      smtpFactory: (_, _, _) => smtp,
       policy: ConnectionPolicy(clock: clock.call),
     );
     gateway = DirectMailGateway(
@@ -82,6 +87,7 @@ class DirectRig {
 
   final TestClock clock;
   late final FakeImapService imap;
+  final FakeSmtpSender smtp = FakeSmtpSender();
   late final DirectStore store;
   late final DirectAccountRuntime runtime;
   late final DirectMailGateway gateway;

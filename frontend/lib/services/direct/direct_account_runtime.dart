@@ -3,11 +3,30 @@ import 'direct_account_setup.dart';
 import 'direct_connection.dart';
 import 'direct_credential_store.dart';
 import 'imap_service.dart';
+import 'smtp_sender.dart';
 
 /// Builds the IMAP client of one account; tests supply an in-memory one.
 typedef ImapFactory = ImapService Function(
   DirectEndpoint endpoint,
   String password,
+);
+
+/// Builds the SMTP sender of one account. [clientDomain] is announced in
+/// `EHLO` (the domain of the account's address).
+typedef SmtpFactory = SmtpSender Function(
+  DirectEndpoint endpoint,
+  String password,
+  String clientDomain,
+);
+
+SmtpSender defaultSmtpFactory(
+  DirectEndpoint endpoint,
+  String password,
+  String clientDomain,
+) => EnoughSmtpSender(
+  endpoint: endpoint,
+  password: password,
+  clientDomain: clientDomain,
 );
 
 /// Everything one signed-in direct account needs while the app runs: its
@@ -22,6 +41,7 @@ class DirectAccountRuntime {
     required this.config,
     required this.credentials,
     required this._imapFactory,
+    this.smtpFactory = defaultSmtpFactory,
     this.credentialStore,
     Future<bool> Function()? isOnline,
     ConnectionPolicy? policy,
@@ -40,6 +60,7 @@ class DirectAccountRuntime {
   DirectAccountConfig config;
   DirectCredentials credentials;
   final ImapFactory _imapFactory;
+  final SmtpFactory smtpFactory;
 
   /// Where the passwords are kept between launches; null in tests.
   final DirectCredentialStore? credentialStore;

@@ -9,6 +9,7 @@ import 'package:kaydetmail/services/direct/imap_models.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'support/fake_imap_service.dart';
+import 'support/fake_smtp_sender.dart';
 import 'support/memory_token_storage.dart';
 
 DirectAccountSetup _setup({
@@ -40,6 +41,7 @@ void main() {
   late DirectCredentialStore credentials;
   late List<String> imapPasswords;
   late List<String> smtpPasswords;
+  late List<String> smtpDomains;
   late List<String> suggestionsAskedFor;
   var n = 0;
 
@@ -50,9 +52,10 @@ void main() {
           imapPasswords.add(password);
           return imap;
         },
-        smtpVerifier: (endpoint, password) async {
+        smtpFactory: (endpoint, password, domain) {
           smtpPasswords.add(password);
-          if (smtpFailure != null) throw smtpFailure;
+          smtpDomains.add(domain);
+          return FakeSmtpSender()..failures.addAll([?smtpFailure]);
         },
         suggestHost: (endpoint) async {
           suggestionsAskedFor.add(endpoint.host);
@@ -68,6 +71,7 @@ void main() {
     credentials = DirectCredentialStore(storage: MemoryTokenStorage());
     imapPasswords = [];
     smtpPasswords = [];
+    smtpDomains = [];
     suggestionsAskedFor = [];
   });
 
@@ -77,6 +81,7 @@ void main() {
       final gateway = await service().add(_setup(), store);
       expect(imapPasswords, ['gizli']);
       expect(smtpPasswords, ['gizli']);
+      expect(smtpDomains, ['example.test']);
       expect(gateway.accountId, 'da-1');
       expect(store.account('da-1')!.email, 'ayse@example.test');
       expect((await credentials.read('da-1'))!.imapPassword, 'gizli');
