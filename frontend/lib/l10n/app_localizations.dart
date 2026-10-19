@@ -5002,6 +5002,180 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Posta sunucusu geçici olarak yanıt vermiyor. Biraz sonra tekrar deneyin.'**
   String get directTemporaryFailure;
+
+  /// No description provided for @directAddTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrudan bağlan'**
+  String get directAddTitle;
+
+  /// No description provided for @directAddEntry.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sunucusuz bağlan (IMAP/SMTP)'**
+  String get directAddEntry;
+
+  /// No description provided for @directAddEntryHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-postanız bu cihazdan doğrudan posta sunucunuzla konuşur.'**
+  String get directAddEntryHint;
+
+  /// No description provided for @directIntro.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu hesap KaydetMail sunucusu olmadan çalışır. Posta bu cihazda şifreli olarak saklanır ve doğrudan posta sunucunuzla eşitlenir.'**
+  String get directIntro;
+
+  /// No description provided for @directInfoNotifications.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni e-posta bildirimleri yalnızca uygulama açıkken ya da yeni arka plana alındığında gelir.'**
+  String get directInfoNotifications;
+
+  /// No description provided for @directInfoScheduled.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zamanlanmış iletiler, uygulama açıkken veya bir sonraki açılışta gönderilir.'**
+  String get directInfoScheduled;
+
+  /// No description provided for @directInfoLocalData.
+  ///
+  /// In tr, this message translates to:
+  /// **'Etiketler, sabitlenen iletiler, hazır metinler ve imzalar yalnızca bu cihazda tutulur.'**
+  String get directInfoLocalData;
+
+  /// No description provided for @directDisplayName.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görünen ad (isteğe bağlı)'**
+  String get directDisplayName;
+
+  /// No description provided for @directServerSettings.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sunucu ayarları'**
+  String get directServerSettings;
+
+  /// No description provided for @directImapSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gelen posta sunucusu (IMAP)'**
+  String get directImapSection;
+
+  /// No description provided for @directSmtpSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'Giden posta sunucusu (SMTP)'**
+  String get directSmtpSection;
+
+  /// No description provided for @directHost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sunucu adı'**
+  String get directHost;
+
+  /// No description provided for @directPort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağlantı noktası'**
+  String get directPort;
+
+  /// No description provided for @directSecurity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güvenlik'**
+  String get directSecurity;
+
+  /// No description provided for @directSecurityTls.
+  ///
+  /// In tr, this message translates to:
+  /// **'SSL/TLS'**
+  String get directSecurityTls;
+
+  /// No description provided for @directSecurityStartTls.
+  ///
+  /// In tr, this message translates to:
+  /// **'STARTTLS'**
+  String get directSecurityStartTls;
+
+  /// No description provided for @directUsername.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıcı adı'**
+  String get directUsername;
+
+  /// No description provided for @directSeparateSmtpPassword.
+  ///
+  /// In tr, this message translates to:
+  /// **'Giden sunucunun şifresi farklı'**
+  String get directSeparateSmtpPassword;
+
+  /// No description provided for @directSmtpPassword.
+  ///
+  /// In tr, this message translates to:
+  /// **'Giden sunucu şifresi'**
+  String get directSmtpPassword;
+
+  /// No description provided for @directHostInvalid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçerli bir sunucu adı girin'**
+  String get directHostInvalid;
+
+  /// No description provided for @directPortInvalid.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 ile 65535 arasında bir değer girin'**
+  String get directPortInvalid;
+
+  /// No description provided for @directDiscoveryGuessed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sunucu adlarını tahmin ettik. Bağlanmadan önce kontrol edin.'**
+  String get directDiscoveryGuessed;
+
+  /// No description provided for @directDiscoveryPublished.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayarlar alan adınızın yayınladığı yapılandırmadan alındı.'**
+  String get directDiscoveryPublished;
+
+  /// No description provided for @directAppPasswordNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu sağlayıcı normal şifrenizi kabul etmez. Hesabınızın güvenlik ayarlarından bir uygulama şifresi oluşturup burada onu kullanın.'**
+  String get directAppPasswordNote;
+
+  /// No description provided for @directUseSuggestedHost.
+  ///
+  /// In tr, this message translates to:
+  /// **'“{host}” adını kullan'**
+  String directUseSuggestedHost(Object host);
+
+  /// No description provided for @directAccountNoteTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrudan bağlantı'**
+  String get directAccountNoteTitle;
+
+  /// No description provided for @directRemoveSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesap ve bu cihazdaki posta silinir; sunucudaki postanıza dokunulmaz.'**
+  String get directRemoveSubtitle;
+
+  /// No description provided for @directWillBeRemoved.
+  ///
+  /// In tr, this message translates to:
+  /// **'{email} bu cihazdan kaldırılacak. Posta sunucunuzdaki iletiler silinmez.'**
+  String directWillBeRemoved(Object email);
+
+  /// No description provided for @directScheduledBanner.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrudan bağlı hesaplardan zamanlanan iletiler, uygulama açıkken veya bir sonraki açılışta gönderilir.'**
+  String get directScheduledBanner;
 }
 
 class _AppLocalizationsDelegate

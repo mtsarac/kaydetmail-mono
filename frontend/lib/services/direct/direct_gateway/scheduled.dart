@@ -28,12 +28,21 @@ mixin _DirectScheduledApi
     status: ScheduledSendStatus.values.byName(row.status),
     createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdMs),
     sentMailId: row.sentLocalId,
-    failureReason: row.failureReason,
+    failureReason: _reasonText(row.failureReason),
     attemptCount: row.attempts,
     nextAttemptAtUtc: row.nextAttemptMs == null
         ? null
         : DateTime.fromMillisecondsSinceEpoch(row.nextAttemptMs!, isUtc: true),
   );
+
+  /// The stored reason code as text the user can read.
+  static String? _reasonText(String? code) {
+    if (code == null) return null;
+    for (final kind in DirectErrorKind.values) {
+      if (kind.code == code) return DirectMailException(kind).userMessage;
+    }
+    return ApiException(status: 0, code: code).userMessage;
+  }
 
   void _requireFuture(DateTime sendAt) {
     if (!sendAt.isAfter(_clock())) {

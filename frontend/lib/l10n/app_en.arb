@@ -825,5 +825,44 @@
   "directCapabilityMissing": "The mail server doesn’t support this feature.",
   "directQuotaExceeded": "The mailbox is full.",
   "directRateLimited": "The server received too many requests. It will be retried after a while.",
-  "directTemporaryFailure": "The mail server is temporarily unavailable. Try again shortly."
+  "directTemporaryFailure": "The mail server is temporarily unavailable. Try again shortly.",
+  "directAddTitle": "Connect directly",
+  "directAddEntry": "Connect without a server (IMAP/SMTP)",
+  "directAddEntryHint": "Your mail talks to your mail server directly from this device.",
+  "directIntro": "This account works without a KaydetMail server. Mail is stored encrypted on this device and syncs straight with your mail server.",
+  "directInfoNotifications": "New-mail notifications arrive only while the app is open or was just sent to the background.",
+  "directInfoScheduled": "Scheduled messages are sent while the app is open, or the next time it is opened.",
+  "directInfoLocalData": "Labels, pinned mail, saved texts and signatures are kept on this device only.",
+  "directDisplayName": "Display name (optional)",
+  "directServerSettings": "Server settings",
+  "directImapSection": "Incoming mail server (IMAP)",
+  "directSmtpSection": "Outgoing mail server (SMTP)",
+  "directHost": "Server name",
+  "directPort": "Port",
+  "directSecurity": "Security",
+  "directSecurityTls": "SSL/TLS",
+  "directSecurityStartTls": "STARTTLS",
+  "directUsername": "Username",
+  "directSeparateSmtpPassword": "The outgoing server uses a different password",
+  "directSmtpPassword": "Outgoing server password",
+  "directHostInvalid": "Enter a valid server name",
+  "directPortInvalid": "Enter a value between 1 and 65535",
+  "directDiscoveryGuessed": "We guessed the server names. Check them before connecting.",
+  "directDiscoveryPublished": "Settings were taken from the configuration your domain publishes.",
+  "directAppPasswordNote": "This provider doesn’t accept your regular password. Create an app password in your account’s security settings and use it here.",
+  "directUseSuggestedHost": "Use “{host}”",
+  "@directUseSuggestedHost": {
+    "placeholders": {
+      "host": {}
+    }
+  },
+  "directAccountNoteTitle": "Direct connection",
+  "directRemoveSubtitle": "The account and the mail on this device are deleted; the mail on your server is untouched.",
+  "directWillBeRemoved": "{email} will be removed from this device. Messages on your mail server are not deleted.",
+  "@directWillBeRemoved": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "directScheduledBanner": "Messages scheduled from directly connected accounts are sent while the app is open, or the next time it is opened."
 }

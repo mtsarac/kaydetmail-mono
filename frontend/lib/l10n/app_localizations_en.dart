@@ -2968,4 +2968,106 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get directTemporaryFailure =>
       'The mail server is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get directAddTitle => 'Connect directly';
+
+  @override
+  String get directAddEntry => 'Connect without a server (IMAP/SMTP)';
+
+  @override
+  String get directAddEntryHint =>
+      'Your mail talks to your mail server directly from this device.';
+
+  @override
+  String get directIntro =>
+      'This account works without a KaydetMail server. Mail is stored encrypted on this device and syncs straight with your mail server.';
+
+  @override
+  String get directInfoNotifications =>
+      'New-mail notifications arrive only while the app is open or was just sent to the background.';
+
+  @override
+  String get directInfoScheduled =>
+      'Scheduled messages are sent while the app is open, or the next time it is opened.';
+
+  @override
+  String get directInfoLocalData =>
+      'Labels, pinned mail, saved texts and signatures are kept on this device only.';
+
+  @override
+  String get directDisplayName => 'Display name (optional)';
+
+  @override
+  String get directServerSettings => 'Server settings';
+
+  @override
+  String get directImapSection => 'Incoming mail server (IMAP)';
+
+  @override
+  String get directSmtpSection => 'Outgoing mail server (SMTP)';
+
+  @override
+  String get directHost => 'Server name';
+
+  @override
+  String get directPort => 'Port';
+
+  @override
+  String get directSecurity => 'Security';
+
+  @override
+  String get directSecurityTls => 'SSL/TLS';
+
+  @override
+  String get directSecurityStartTls => 'STARTTLS';
+
+  @override
+  String get directUsername => 'Username';
+
+  @override
+  String get directSeparateSmtpPassword =>
+      'The outgoing server uses a different password';
+
+  @override
+  String get directSmtpPassword => 'Outgoing server password';
+
+  @override
+  String get directHostInvalid => 'Enter a valid server name';
+
+  @override
+  String get directPortInvalid => 'Enter a value between 1 and 65535';
+
+  @override
+  String get directDiscoveryGuessed =>
+      'We guessed the server names. Check them before connecting.';
+
+  @override
+  String get directDiscoveryPublished =>
+      'Settings were taken from the configuration your domain publishes.';
+
+  @override
+  String get directAppPasswordNote =>
+      'This provider doesn’t accept your regular password. Create an app password in your account’s security settings and use it here.';
+
+  @override
+  String directUseSuggestedHost(Object host) {
+    return 'Use “$host”';
+  }
+
+  @override
+  String get directAccountNoteTitle => 'Direct connection';
+
+  @override
+  String get directRemoveSubtitle =>
+      'The account and the mail on this device are deleted; the mail on your server is untouched.';
+
+  @override
+  String directWillBeRemoved(Object email) {
+    return '$email will be removed from this device. Messages on your mail server are not deleted.';
+  }
+
+  @override
+  String get directScheduledBanner =>
+      'Messages scheduled from directly connected accounts are sent while the app is open, or the next time it is opened.';
 }

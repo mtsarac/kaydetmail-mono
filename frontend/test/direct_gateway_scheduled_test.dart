@@ -201,7 +201,10 @@ void main() {
       var current = (await rig.gateway.listScheduledSends()).single;
       expect(current.status, ScheduledSendStatus.pending);
       expect(current.attemptCount, 1);
-      expect(current.failureReason, 'host_unreachable');
+      expect(
+        current.failureReason,
+        DirectMailException(DirectErrorKind.hostUnreachable).userMessage,
+      );
       expect(current.nextAttemptAtUtc!.isAfter(rig.clock.now.toUtc()), isTrue);
 
       // Not yet.
@@ -225,7 +228,10 @@ void main() {
       await rig.gateway.runDueScheduledSends();
       final current = (await rig.gateway.listScheduledSends()).single;
       expect(current.status, ScheduledSendStatus.failed);
-      expect(current.failureReason, 'smtp_recipient_rejected');
+      expect(
+        current.failureReason,
+        DirectMailException(DirectErrorKind.smtpRecipientRejected).userMessage,
+      );
       rig.clock.advance(const Duration(hours: 5));
       await rig.gateway.runDueScheduledSends();
       expect(rig.smtp.attempts, 1, reason: 'a failed send is not retried');

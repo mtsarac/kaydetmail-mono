@@ -73,7 +73,7 @@ class DirectAccountService {
       // that the password was accepted.
       await imap.listFolders();
     } on DirectMailException catch (error) {
-      throw await _explainCertificate(error, setup.imap);
+      throw await _explainCertificate(error, setup.imap, 'imap');
     } finally {
       await imap.disconnect();
     }
@@ -86,7 +86,7 @@ class DirectAccountService {
         _domainOf(setup.email),
       ).verify();
     } on DirectMailException catch (error) {
-      throw await _explainCertificate(error, setup.smtp);
+      throw await _explainCertificate(error, setup.smtp, 'smtp');
     }
   }
 
@@ -100,16 +100,19 @@ class DirectAccountService {
   Future<DirectMailException> _explainCertificate(
     DirectMailException error,
     DirectEndpoint endpoint,
+    String which,
   ) async {
-    if (error.kind != DirectErrorKind.tlsCertificateInvalid) return error;
-    final suggestion = await _suggestHost(endpoint);
-    return suggestion == null
-        ? error
-        : DirectMailException(
-            DirectErrorKind.tlsCertificateInvalid,
-            suggestedHost: suggestion,
-            cause: error.cause,
-          );
+    final suggestion = error.kind == DirectErrorKind.tlsCertificateInvalid
+        ? await _suggestHost(endpoint)
+        : null;
+    // Which server a refusal was about helps the setup screen put the
+    // message (and a suggested host name) next to the right fields.
+    return DirectMailException(
+      error.kind,
+      suggestedHost: suggestion,
+      cause: error.cause,
+      endpoint: which,
+    );
   }
 
   /// Verifies [setup], stores the account and its passwords and returns the

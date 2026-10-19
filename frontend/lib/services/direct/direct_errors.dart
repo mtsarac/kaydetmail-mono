@@ -73,14 +73,21 @@ enum DirectErrorKind {
 /// detection, outbox classification, [friendlyErrorMessage]) keeps working
 /// for direct accounts without being touched.
 class DirectMailException extends ApiException {
-  DirectMailException(this.kind, {this.suggestedHost, this.cause})
-    : super(status: kind.status, code: kind.code);
+  DirectMailException(
+    this.kind, {
+    this.suggestedHost,
+    this.cause,
+    this.endpoint,
+  }) : super(status: kind.status, code: kind.code);
 
   final DirectErrorKind kind;
 
   /// For [DirectErrorKind.tlsCertificateInvalid]: a host name the server's
   /// certificate really covers (the user can try it as the server name).
   final String? suggestedHost;
+
+  /// Which server a setup failure was about: `imap` or `smtp`.
+  final String? endpoint;
 
   /// The underlying error, for debugging. Never shown, never logged.
   final Object? cause;

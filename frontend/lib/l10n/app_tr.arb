@@ -1393,5 +1393,44 @@
   "directCapabilityMissing": "Posta sunucusu bu özelliği desteklemiyor.",
   "directQuotaExceeded": "Posta kutusu dolu.",
   "directRateLimited": "Sunucu çok fazla istek aldı. Bir süre sonra yeniden denenecek.",
-  "directTemporaryFailure": "Posta sunucusu geçici olarak yanıt vermiyor. Biraz sonra tekrar deneyin."
+  "directTemporaryFailure": "Posta sunucusu geçici olarak yanıt vermiyor. Biraz sonra tekrar deneyin.",
+  "directAddTitle": "Doğrudan bağlan",
+  "directAddEntry": "Sunucusuz bağlan (IMAP/SMTP)",
+  "directAddEntryHint": "E-postanız bu cihazdan doğrudan posta sunucunuzla konuşur.",
+  "directIntro": "Bu hesap KaydetMail sunucusu olmadan çalışır. Posta bu cihazda şifreli olarak saklanır ve doğrudan posta sunucunuzla eşitlenir.",
+  "directInfoNotifications": "Yeni e-posta bildirimleri yalnızca uygulama açıkken ya da yeni arka plana alındığında gelir.",
+  "directInfoScheduled": "Zamanlanmış iletiler, uygulama açıkken veya bir sonraki açılışta gönderilir.",
+  "directInfoLocalData": "Etiketler, sabitlenen iletiler, hazır metinler ve imzalar yalnızca bu cihazda tutulur.",
+  "directDisplayName": "Görünen ad (isteğe bağlı)",
+  "directServerSettings": "Sunucu ayarları",
+  "directImapSection": "Gelen posta sunucusu (IMAP)",
+  "directSmtpSection": "Giden posta sunucusu (SMTP)",
+  "directHost": "Sunucu adı",
+  "directPort": "Bağlantı noktası",
+  "directSecurity": "Güvenlik",
+  "directSecurityTls": "SSL/TLS",
+  "directSecurityStartTls": "STARTTLS",
+  "directUsername": "Kullanıcı adı",
+  "directSeparateSmtpPassword": "Giden sunucunun şifresi farklı",
+  "directSmtpPassword": "Giden sunucu şifresi",
+  "directHostInvalid": "Geçerli bir sunucu adı girin",
+  "directPortInvalid": "1 ile 65535 arasında bir değer girin",
+  "directDiscoveryGuessed": "Sunucu adlarını tahmin ettik. Bağlanmadan önce kontrol edin.",
+  "directDiscoveryPublished": "Ayarlar alan adınızın yayınladığı yapılandırmadan alındı.",
+  "directAppPasswordNote": "Bu sağlayıcı normal şifrenizi kabul etmez. Hesabınızın güvenlik ayarlarından bir uygulama şifresi oluşturup burada onu kullanın.",
+  "directUseSuggestedHost": "“{host}” adını kullan",
+  "@directUseSuggestedHost": {
+    "placeholders": {
+      "host": {}
+    }
+  },
+  "directAccountNoteTitle": "Doğrudan bağlantı",
+  "directRemoveSubtitle": "Hesap ve bu cihazdaki posta silinir; sunucudaki postanıza dokunulmaz.",
+  "directWillBeRemoved": "{email} bu cihazdan kaldırılacak. Posta sunucunuzdaki iletiler silinmez.",
+  "@directWillBeRemoved": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "directScheduledBanner": "Doğrudan bağlı hesaplardan zamanlanan iletiler, uygulama açıkken veya bir sonraki açılışta gönderilir."
 }
