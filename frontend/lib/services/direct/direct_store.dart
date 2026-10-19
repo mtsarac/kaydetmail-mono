@@ -171,6 +171,16 @@ class DirectStore {
         PRIMARY KEY (account_id, local_id, part_id)
       )''',
     ],
+    // 2 — per-account settings (signature, notification choices, …).
+    [
+      '''
+      CREATE TABLE d_settings (
+        account_id TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value TEXT NOT NULL,
+        PRIMARY KEY (account_id, key)
+      )''',
+    ],
   ];
 
   void _migrate() {
@@ -189,6 +199,8 @@ class DirectStore {
       });
     }
   }
+
+  static int get latestSchemaVersion => _migrations.length;
 
   /// Schema version this device is at (for tests).
   int get schemaVersion =>
@@ -317,6 +329,33 @@ class DirectStore {
         _db.execute('DELETE FROM $table WHERE account_id = ?', [accountId]);
       }
     });
+  }
+
+  // --- Settings ---------------------------------------------------------------
+
+  String? setting(String accountId, String key) {
+    final rows = _db.select(
+      'SELECT value FROM d_settings WHERE account_id = ? AND key = ?',
+      [accountId, key],
+    );
+    return rows.isEmpty ? null : rows.first['value'] as String;
+  }
+
+  /// Stores [value] under [key]; null removes it.
+  void putSetting(String accountId, String key, String? value) {
+    if (value == null) {
+      _db.execute('DELETE FROM d_settings WHERE account_id = ? AND key = ?', [
+        accountId,
+        key,
+      ]);
+      return;
+    }
+    _db.execute(
+      '''
+      INSERT INTO d_settings (account_id, key, value) VALUES (?,?,?)
+      ON CONFLICT(account_id, key) DO UPDATE SET value = excluded.value''',
+      [accountId, key, value],
+    );
   }
 
   // --- Folders ---------------------------------------------------------------
@@ -682,6 +721,45 @@ class DirectStore {
       MessageRow._(row),
   ];
 
+  /// The `WHERE` tail shared by [page] and [count]: a folder's visible
+  /// messages narrowed by the list filters.
+  ({String sql, List<Object?> args}) _listFilter(
+    String accountId,
+    String folderId, {
+    bool? unreadOnly,
+    bool? flaggedOnly,
+    bool? isRead,
+    bool? hasAttachments,
+    String? text,
+  }) {
+    final read = unreadOnly == true ? false : isRead;
+    final args = <Object?>[accountId, folderId];
+    final sql = StringBuffer(
+      'account_id = ? AND folder_id = ? AND hidden = 0 AND uid IS NOT NULL',
+    );
+    if (read != null) sql.write(' AND is_read = ${read ? 1 : 0}');
+    if (flaggedOnly == true) sql.write(' AND is_flagged = 1');
+    if (hasAttachments != null) {
+      sql.write(' AND has_attachments = ${hasAttachments ? 1 : 0}');
+    }
+    final needle = text?.trim() ?? '';
+    if (needle.isNotEmpty) {
+      final like = '%${_likeEscape(needle)}%';
+      sql.write(
+        " AND (subject LIKE ? ESCAPE '\\' OR from_name LIKE ? ESCAPE '\\' "
+        "OR from_addr LIKE ? ESCAPE '\\' OR to_json LIKE ? ESCAPE '\\' "
+        "OR snippet LIKE ? ESCAPE '\\')",
+      );
+      args.addAll([like, like, like, like, like]);
+    }
+    return (sql: sql.toString(), args: args);
+  }
+
+  static String _likeEscape(String value) => value
+      .replaceAll(r'\', r'\\')
+      .replaceAll('%', r'\%')
+      .replaceAll('_', r'\_');
+
   /// One page of a folder, newest first, hidden rows left out.
   List<MessageRow> page(
     String accountId,
@@ -690,33 +768,58 @@ class DirectStore {
     required int limit,
     bool? unreadOnly,
     bool? flaggedOnly,
-  }) => [
-    for (final row in _db.select(
-      'SELECT * FROM d_messages WHERE account_id = ? AND folder_id = ? '
-      'AND hidden = 0 AND uid IS NOT NULL '
-      '${unreadOnly == true ? 'AND is_read = 0 ' : ''}'
-      '${flaggedOnly == true ? 'AND is_flagged = 1 ' : ''}'
-      'ORDER BY sort_ms DESC, uid DESC LIMIT ? OFFSET ?',
-      [accountId, folderId, limit, offset],
-    ))
-      MessageRow._(row),
-  ];
+    bool? isRead,
+    bool? hasAttachments,
+    String? text,
+  }) {
+    final filter = _listFilter(
+      accountId,
+      folderId,
+      unreadOnly: unreadOnly,
+      flaggedOnly: flaggedOnly,
+      isRead: isRead,
+      hasAttachments: hasAttachments,
+      text: text,
+    );
+    return [
+      for (final row in _db.select(
+        'SELECT * FROM d_messages WHERE ${filter.sql} '
+        'ORDER BY sort_ms DESC, uid DESC LIMIT ? OFFSET ?',
+        [...filter.args, limit, offset],
+      ))
+        MessageRow._(row),
+    ];
+  }
 
-  int count(String accountId, String folderId) =>
-      _db.select(
-            'SELECT COUNT(*) AS n FROM d_messages WHERE account_id = ? '
-            'AND folder_id = ? AND hidden = 0 AND uid IS NOT NULL',
-            [accountId, folderId],
-          ).first['n']
-          as int;
+  int count(
+    String accountId,
+    String folderId, {
+    bool? unreadOnly,
+    bool? flaggedOnly,
+    bool? isRead,
+    bool? hasAttachments,
+    String? text,
+  }) {
+    final filter = _listFilter(
+      accountId,
+      folderId,
+      unreadOnly: unreadOnly,
+      flaggedOnly: flaggedOnly,
+      isRead: isRead,
+      hasAttachments: hasAttachments,
+      text: text,
+    );
+    return _db
+            .select(
+              'SELECT COUNT(*) AS n FROM d_messages WHERE ${filter.sql}',
+              filter.args,
+            )
+            .first['n']
+        as int;
+  }
 
   int unreadCount(String accountId, String folderId) =>
-      _db.select(
-            'SELECT COUNT(*) AS n FROM d_messages WHERE account_id = ? '
-            'AND folder_id = ? AND hidden = 0 AND uid IS NOT NULL AND is_read = 0',
-            [accountId, folderId],
-          ).first['n']
-          as int;
+      count(accountId, folderId, unreadOnly: true);
 
   /// UIDs stored for a folder, ascending.
   List<int> uids(
@@ -1063,6 +1166,32 @@ class DirectStore {
     }
     return out;
   }
+
+  static const _visibleThread =
+      'EXISTS (SELECT 1 FROM d_messages m WHERE m.account_id = t.account_id '
+      'AND m.thread_id = t.thread_id AND m.hidden = 0 AND m.uid IS NOT NULL)';
+
+  /// Threads that still have a visible message, newest activity first.
+  List<ThreadRow> threads(
+    String accountId, {
+    required int offset,
+    required int limit,
+  }) => [
+    for (final row in _db.select(
+      'SELECT t.* FROM d_threads t WHERE t.account_id = ? AND $_visibleThread '
+      'ORDER BY t.last_ms DESC, t.thread_id LIMIT ? OFFSET ?',
+      [accountId, limit, offset],
+    ))
+      ThreadRow._(row),
+  ];
+
+  int threadCount(String accountId) =>
+      _db.select(
+            'SELECT COUNT(*) AS n FROM d_threads t WHERE t.account_id = ? '
+            'AND $_visibleThread',
+            [accountId],
+          ).first['n']
+          as int;
 
   List<MessageRow> threadMessages(String accountId, String threadId) => [
     for (final row in _db.select(

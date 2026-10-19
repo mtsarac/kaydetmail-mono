@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import '../../models/account_notification_settings.dart';
@@ -32,6 +33,11 @@ import 'gateway_models.dart';
 /// an `ApiException` with the `unsupported_operation` code; callers check
 /// `AccountCapabilities` first so users never see such a failure.
 abstract interface class MailGateway {
+  /// Changes the gateway noticed by itself. A request/response gateway has
+  /// none; a gateway with a local mail store reports when a background pass
+  /// changed it so the repository can re-read.
+  Stream<GatewayEvent> get events;
+
   // --- Account ---------------------------------------------------------
 
   Future<MailAccount> getAccount();

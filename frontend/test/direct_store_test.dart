@@ -70,8 +70,8 @@ void main() {
   group('schema', () {
     test('migrates once and is safe to open again', () {
       final db = sqlite3.openInMemory();
-      expect(DirectStore(db).schemaVersion, 1);
-      expect(DirectStore(db).schemaVersion, 1);
+      expect(DirectStore(db).schemaVersion, DirectStore.latestSchemaVersion);
+      expect(DirectStore(db).schemaVersion, DirectStore.latestSchemaVersion);
     });
 
     test('every d_ table is keyed by account_id (so removal can be exact)', () {

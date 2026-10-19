@@ -128,6 +128,7 @@ class DirectEmailMapper {
     BodyRow? body,
   ) => {
     'id': row.localId,
+    'conversationId': row.threadId,
     'fromAddress': row.fromAddress,
     'fromDisplayName': row.fromName,
     'to': [for (final r in row.to) r.address],

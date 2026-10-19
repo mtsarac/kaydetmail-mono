@@ -297,4 +297,7 @@ class ApiMailService extends _ApiMailServiceBase
         _ComposeApi
     implements MailGateway {
   ApiMailService(super._client, {super.syncPollInterval, super.syncTimeout});
+
+  @override
+  Stream<GatewayEvent> get events => const Stream.empty();
 }

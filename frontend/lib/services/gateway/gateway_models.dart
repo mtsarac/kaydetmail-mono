@@ -242,3 +242,33 @@ class MailListPage {
   final int pageSize;
   final int total;
 }
+
+/// What kind of thing changed behind a gateway without anyone asking.
+enum GatewayEventKind {
+  /// Stored mail of [GatewayEvent.folderId] changed (new, removed, flags).
+  mail,
+
+  /// The folder list changed.
+  folders,
+
+  /// The mail server stopped being reachable.
+  offline,
+
+  /// The mail server is reachable again.
+  online,
+
+  /// The server refused the credentials; the user has to sign in again.
+  needsReauthentication,
+}
+
+/// A change a gateway noticed on its own (background sync, push, watch).
+/// Gateways that only answer requests never emit any.
+class GatewayEvent {
+  const GatewayEvent(this.kind, {this.folderId, this.newMailIds = const []});
+
+  final GatewayEventKind kind;
+  final String? folderId;
+
+  /// Mail stored for the first time by the pass that raised this event.
+  final List<String> newMailIds;
+}
