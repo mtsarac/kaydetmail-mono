@@ -35,6 +35,7 @@ class DirectAccountService {
     this._isOnline,
     String Function()? newId,
     this.syncOptions = const SyncOptions(),
+    this.staleAfter = const Duration(seconds: 30),
   }) : credentials = credentials ?? DirectCredentialStore(),
        _imapFactory = imapFactory ?? _realImap,
        _suggestHost = suggestHost ?? CertificateHint.forServer,
@@ -47,6 +48,7 @@ class DirectAccountService {
   final Future<bool> Function()? _isOnline;
   final String Function() _newId;
   final SyncOptions syncOptions;
+  final Duration staleAfter;
 
   static EnoughImapService _realImap(
     DirectEndpoint endpoint,
@@ -171,6 +173,7 @@ class DirectAccountService {
       runtime: runtime,
       store: store,
       syncOptions: syncOptions,
+      staleAfter: staleAfter,
     );
   }
 }

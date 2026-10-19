@@ -28,6 +28,8 @@ import '../models/scheduled_send_detail.dart';
 import '../models/mail_signature.dart';
 import '../models/trusted_sender.dart';
 import '../models/attachment_download_state.dart';
+import '../services/direct/direct_account_setup.dart';
+import '../services/direct/settings_discovery.dart';
 
 /// Server connection settings entered on the login screen.
 ///
@@ -157,6 +159,19 @@ abstract class MailRepository extends ChangeNotifier {
   /// accounts get the backend profile, the long-standing default.
   AccountCapabilities capabilitiesOf(String accountId) =>
       const AccountCapabilities.backend();
+
+  /// Connects a mailbox straight to its IMAP/SMTP servers from this device,
+  /// with no KaydetMail backend in between. The servers are tried before
+  /// anything is stored; failures arrive as [ApiException]s with stable codes
+  /// (`auth_failed`, `tls_certificate_invalid`, …).
+  Future<MailAccount> connectDirectAccount(DirectAccountSetup setup) =>
+      throw UnsupportedError('Direct accounts are not available');
+
+  /// Suggested server settings for [email] (known providers, the domain's
+  /// published configuration, or the `mail.<domain>` convention); null when
+  /// the address is unusable.
+  Future<DiscoveredSettings?> discoverDirectSettings(String email) async =>
+      null;
 
   /// Sets or clears (`null`/blank) [accountId]'s signature, synced to the
   /// backend so every device signed into that account sees it. Throws

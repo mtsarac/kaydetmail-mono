@@ -43,6 +43,9 @@ class AccountSession {
   AccountCapabilities capabilities;
 
   bool offline = false;
+
+  /// Changes the gateway reports on its own (background sync, reachability).
+  StreamSubscription<GatewayEvent>? events;
   String? deviceId;
   LocalMailFlagsStore? flagsStore;
 

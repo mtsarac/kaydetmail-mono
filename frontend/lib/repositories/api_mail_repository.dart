@@ -36,6 +36,11 @@ import '../services/api_client.dart';
 import '../services/api_exception.dart';
 import '../services/api_mail_service.dart';
 import '../services/device_identifier_provider.dart';
+import '../services/direct/direct_account_service.dart';
+import '../services/direct/direct_account_setup.dart';
+import '../services/direct/direct_store.dart';
+import '../services/direct/settings_discovery.dart';
+import '../services/gateway/mail_gateway.dart';
 import '../services/local_mail_flags_store.dart';
 import '../services/mail_cache.dart';
 import '../models/attachment_download_state.dart';
@@ -90,6 +95,8 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
     AttachmentDownloadManager? attachmentDownloadManager,
     AttachmentAutoDownloader? attachmentAutoDownloader,
     AccountDataPurger? accountDataPurger,
+    this._directAccountService,
+    this._settingsDiscovery,
   }) : _initialAuthService = authService,
        _initialMailService = mailService,
        _attachmentDownloadManager =
@@ -112,6 +119,12 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
   final ({ApiAuthService authService, ApiMailService mailService}) Function()?
   _sessionFactory;
   bool _initialConsumed = false;
+
+  // Direct (IMAP/SMTP) accounts: created lazily so a backend-only install
+  // never touches them.
+  DirectAccountService? _directAccountService;
+  SettingsDiscovery? _settingsDiscovery;
+  DirectStore? _directStore;
 
   final Future<MailCache> Function()? _openCache;
   final AttachmentDownloadManager _attachmentDownloadManager;
@@ -264,6 +277,16 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
     } catch (_) {
       // Logout is local-first: remote revocation may fail while offline.
     } finally {
+      await session.events?.cancel();
+      if (session.account.isDirect) {
+        // Signing a direct account out removes it from this device: there is
+        // no server session to revoke, only the local copy and the passwords.
+        try {
+          await session.mailService.deleteAccount();
+        } catch (_) {
+          // The purge below still removes the cached traces.
+        }
+      }
       await session.authService?.tokenStore.clear(session.account.id);
       session.persistTimer?.cancel();
       _cancelReconnectRetry(session);
@@ -295,6 +318,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
   Future<void> _expireSession(String accountId) async {
     final session = _sessions.remove(accountId);
     if (session == null) return;
+    await session.events?.cancel();
     await session.authService?.tokenStore.clear(accountId);
     session.persistTimer?.cancel();
     _cancelReconnectRetry(session);
@@ -590,8 +614,8 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
   /// leaves a half-initialized account behind.
   Future<MailAccount> _activateSession(
     MailAccount account, {
-    required ApiAuthService authService,
-    required ApiMailService mailService,
+    ApiAuthService? authService,
+    required MailGateway mailService,
   }) async {
     final session = AccountSession(
       authService: authService,
@@ -599,7 +623,8 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
       account: account,
     );
     _sessions[account.id] = session;
-    authService.client.onAuthenticationLost = () => _expireSession(account.id);
+    authService?.client.onAuthenticationLost = () => _expireSession(account.id);
+    _listenToGateway(session);
     try {
       _cache ??= await _openCacheOrMemory();
       final flags = LocalMailFlagsStore(account.id, _cache!);
@@ -618,7 +643,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
       final hasCachedMailbox = hydrated || session.folderIds.isNotEmpty;
       if (hasCachedMailbox) {
         session.offline = true;
-        await SessionStore.saveAccountId(account.email, account.id);
+        await _rememberAccount(account);
         notifyListeners();
         unawaited(
           Future<void>.delayed(
@@ -639,16 +664,21 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
       }
       unawaited(_accountSettings.refreshSessionQuota(session));
       unawaited(_signatures.migrateLegacy(session));
-      await SessionStore.saveAccountId(account.email, account.id);
+      await _rememberAccount(account);
       notifyListeners();
       return session.account;
     } catch (_) {
       _cancelReconnectRetry(session);
+      await session.events?.cancel();
       _sessions.remove(account.id);
       _touch();
       rethrow;
     }
   }
+
+  Future<void> _rememberAccount(MailAccount account) => account.isDirect
+      ? SessionStore.saveDirectAccount(account.id, account.email)
+      : SessionStore.saveAccountId(account.email, account.id);
 
   Future<void> _hydrateLocalSessionState(
     AccountSession session,
@@ -972,6 +1002,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
   Future<void> removeAccount(String accountId) async {
     final session = _sessions[accountId];
     if (session == null) return;
+    await session.events?.cancel();
     await session.mailService.deleteAccount();
     await session.authService?.tokenStore.clear(accountId);
     await _unregisterDeviceFor(session);
@@ -990,6 +1021,8 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
 
   @override
   Future<void> restoreSession(String email) async {
+    final direct = await SessionStore.loadDirectAccount(email);
+    if (direct != null) return _restoreDirectSession(direct);
     final services = _nextServices();
     final accountIds = await services.authService.tokenStore.readAccountIds();
     final savedAccountId = await SessionStore.loadAccountId(email);
@@ -1025,6 +1058,111 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
       authService: services.authService,
       mailService: services.mailService,
     );
+  }
+
+  // --- Direct (IMAP/SMTP) accounts -------------------------------------------
+
+  DirectAccountService get _directAccounts =>
+      _directAccountService ??= DirectAccountService();
+
+  Future<DirectStore> _openDirectStore() async {
+    _cache ??= await _openCacheOrMemory();
+    return _directStore ??= DirectStore(_cache!.db);
+  }
+
+  @override
+  Future<DiscoveredSettings?> discoverDirectSettings(String email) =>
+      (_settingsDiscovery ??= SettingsDiscovery()).discover(email);
+
+  @override
+  Future<MailAccount> connectDirectAccount(DirectAccountSetup setup) async {
+    final store = await _openDirectStore();
+    final gateway = await _directAccounts.add(
+      setup,
+      store,
+      existingEmails: [for (final s in _sessions.values) s.account.email],
+    );
+    try {
+      final account = await _activateSession(
+        await gateway.getAccount(),
+        mailService: gateway,
+      );
+      // A freshly added account shows up in the unified mailbox at once.
+      _activeAccountId = null;
+      _touch();
+      notifyListeners();
+      return account;
+    } catch (_) {
+      // Nothing half-added is left behind: no stored mail, no passwords.
+      await gateway.deleteAccount();
+      rethrow;
+    }
+  }
+
+  Future<void> _restoreDirectSession(DirectSessionEntry entry) async {
+    if (_sessions.containsKey(entry.id)) return;
+    final gateway = await _directAccounts.restore(
+      entry.id,
+      await _openDirectStore(),
+    );
+    if (gateway == null) {
+      throw StateError('Direct account data is unavailable.');
+    }
+    await _activateSession(await gateway.getAccount(), mailService: gateway);
+  }
+
+  /// Follows what a gateway notices on its own: background sync results and
+  /// changes in whether the mail server can be reached.
+  void _listenToGateway(AccountSession session) {
+    session.events = session.mailService.events.listen(
+      (event) => unawaited(_onGatewayEvent(session, event)),
+    );
+  }
+
+  Future<void> _onGatewayEvent(
+    AccountSession session,
+    GatewayEvent event,
+  ) async {
+    if (_sessions[session.account.id] != session) return;
+    try {
+      switch (event.kind) {
+        case GatewayEventKind.mail:
+          final folderId = event.folderId;
+          final logical = folderId == null
+              ? null
+              : session.folderTypeById[folderId];
+          if (logical != null) {
+            await _refreshEmailsFor(session, logical);
+          } else if (folderId != null) {
+            session.forgetCustomFolderMails(folderId);
+          }
+          _folders.applyFolderMap(
+            session,
+            await session.mailService.getFolders(),
+          );
+        case GatewayEventKind.folders:
+          _folders.applyFolderMap(
+            session,
+            await session.mailService.getFolders(),
+          );
+        case GatewayEventKind.offline:
+          _markOffline(session);
+        case GatewayEventKind.online:
+          _cancelReconnectRetry(session);
+          session.offline = false;
+          session.account = (await session.mailService.getAccount()).copyWith(
+            quota: session.account.quota,
+          );
+        case GatewayEventKind.needsReauthentication:
+          session.account = (await session.mailService.getAccount()).copyWith(
+            quota: session.account.quota,
+          );
+      }
+    } catch (_) {
+      // A failed refresh leaves the lists as they were; the next one retries.
+    }
+    _touch();
+    notifyListeners();
   }
 
   /// Device sessions of whichever account is currently active (falling back
