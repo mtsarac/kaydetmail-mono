@@ -32,12 +32,14 @@ import 'direct_credential_store.dart';
 import 'direct_errors.dart';
 import 'direct_store.dart';
 import 'email_mapper.dart';
+import 'imap_flags.dart';
 import 'imap_models.dart';
 import 'imap_service.dart';
 import 'mime_processor.dart';
 import 'sync_engine.dart';
 
 part 'direct_gateway/account.dart';
+part 'direct_gateway/actions.dart';
 part 'direct_gateway/folders.dart';
 part 'direct_gateway/mail.dart';
 part 'direct_gateway/unsupported.dart';
@@ -154,6 +156,17 @@ abstract class _DirectGatewayBase {
     return folder;
   }
 
+  DateTime? _folderListSyncedAt;
+
+  /// Re-reads the server's folder list into the store.
+  Future<void> _refreshFolderList({bool userInitiated = false}) async {
+    await _withEngine(
+      (engine, _) => engine.syncFolderList(),
+      userInitiated: userInitiated,
+    );
+    _folderListSyncedAt = _clock();
+  }
+
   // --- Sync ------------------------------------------------------------------------------
 
   final Set<String> _syncing = {};
@@ -228,7 +241,8 @@ class DirectMailGateway extends _DirectGatewayBase
         _DirectUnsupportedApi,
         _DirectAccountApi,
         _DirectFolderApi,
-        _DirectMailApi
+        _DirectMailApi,
+        _DirectActionApi
     implements MailGateway {
   DirectMailGateway({
     required DirectAccountRuntime runtime,

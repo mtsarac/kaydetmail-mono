@@ -181,6 +181,20 @@ class DirectStore {
         PRIMARY KEY (account_id, key)
       )''',
     ],
+    // 3 — where a mail came from before it was trashed or marked as spam
+    // (so "restore" can put it back), and when a mail was moved here by this
+    // app before the server listed it (so a move that never shows up can be
+    // dropped).
+    [
+      '''
+      CREATE TABLE d_origins (
+        account_id TEXT NOT NULL,
+        local_id TEXT NOT NULL,
+        folder_id TEXT NOT NULL,
+        PRIMARY KEY (account_id, local_id)
+      )''',
+      'ALTER TABLE d_messages ADD COLUMN moved_ms INTEGER',
+    ],
   ];
 
   void _migrate() {
@@ -908,8 +922,12 @@ class DirectStore {
     });
   }
 
+  /// Tables that hold rows about one message, keyed by `local_id`; they go
+  /// when the message does.
+  static const _perMessageTables = ['d_bodies', 'd_parts', 'd_origins'];
+
   void deleteMessage(String accountId, String localId) {
-    for (final table in const ['d_bodies', 'd_parts']) {
+    for (final table in _perMessageTables) {
       _db.execute('DELETE FROM $table WHERE account_id = ? AND local_id = ?', [
         accountId,
         localId,
@@ -919,6 +937,161 @@ class DirectStore {
       'DELETE FROM d_messages WHERE account_id = ? AND local_id = ?',
       [accountId, localId],
     );
+  }
+
+  /// Moves a stored message to another folder, keeping its id (and with it
+  /// every pin, label and snooze). With [uid] the message is bound to its new
+  /// place at once; without, it waits there until a sync of that folder lists
+  /// it and re-binds it by Message-ID.
+  void moveMessage(
+    String accountId,
+    String localId, {
+    required String folderId,
+    int? uid,
+    int? uidValidity,
+  }) {
+    transaction(() {
+      if (uid != null) {
+        final other = messageByUid(accountId, folderId, uid);
+        if (other != null && other.localId != localId) {
+          deleteMessage(accountId, other.localId);
+        }
+      }
+      _db.execute(
+        '''
+        UPDATE d_messages SET folder_id = ?, uid = ?, uid_validity = ?,
+          moved_ms = ?
+        WHERE account_id = ? AND local_id = ?''',
+        [
+          folderId,
+          uid,
+          uidValidity,
+          uid == null ? now.millisecondsSinceEpoch : null,
+          accountId,
+          localId,
+        ],
+      );
+    });
+  }
+
+  /// Removes messages that were moved into [folderId] before [beforeMs] and
+  /// that no sync has listed since: they are not there.
+  int dropUnmatchedMoves(
+    String accountId,
+    String folderId, {
+    required int beforeMs,
+  }) {
+    final rows = _db.select(
+      'SELECT local_id FROM d_messages WHERE account_id = ? AND folder_id = ? '
+      'AND uid IS NULL AND moved_ms IS NOT NULL AND moved_ms < ?',
+      [accountId, folderId, beforeMs],
+    );
+    transaction(() {
+      for (final row in rows) {
+        deleteMessage(accountId, row['local_id'] as String);
+      }
+    });
+    return rows.length;
+  }
+
+  /// Keeps a folder's remembered server counts right after this app changed
+  /// them itself, so lists and badges do not wait for the next sync.
+  void adjustFolderCounts(
+    String accountId,
+    String folderId, {
+    int existsDelta = 0,
+    int unseenDelta = 0,
+    int? uidNext,
+  }) => _db.execute(
+    '''
+    UPDATE d_folders SET
+      remote_exists = CASE WHEN remote_exists IS NULL THEN NULL
+        ELSE MAX(0, remote_exists + ?) END,
+      remote_unseen = CASE WHEN remote_unseen IS NULL THEN NULL
+        ELSE MAX(0, remote_unseen + ?) END,
+      uid_next = COALESCE(?, uid_next)
+    WHERE account_id = ? AND folder_id = ?''',
+    [existsDelta, unseenDelta, uidNext, accountId, folderId],
+  );
+
+  // --- Origins (restore from Trash / Spam) -------------------------------------
+
+  String? origin(String accountId, String localId) {
+    final rows = _db.select(
+      'SELECT folder_id FROM d_origins WHERE account_id = ? AND local_id = ?',
+      [accountId, localId],
+    );
+    return rows.isEmpty ? null : rows.first['folder_id'] as String;
+  }
+
+  void putOrigin(String accountId, String localId, String? folderId) {
+    if (folderId == null) {
+      _db.execute(
+        'DELETE FROM d_origins WHERE account_id = ? AND local_id = ?',
+        [accountId, localId],
+      );
+      return;
+    }
+    _db.execute(
+      '''
+      INSERT INTO d_origins (account_id, local_id, folder_id) VALUES (?,?,?)
+      ON CONFLICT(account_id, local_id) DO UPDATE SET folder_id = excluded.folder_id''',
+      [accountId, localId, folderId],
+    );
+  }
+
+  // --- Folder tree changes ------------------------------------------------------------
+
+  /// Gives the folder at [oldPath] and everything below it new paths,
+  /// keeping their ids, so the mail stored under them stays attached.
+  void renameFolderTree(
+    String accountId,
+    String oldPath,
+    String newPath, {
+    required String newName,
+  }) {
+    transaction(() {
+      final all = folders(accountId, includeUnavailable: true);
+      for (final folder in all) {
+        final String? path;
+        if (folder.path == oldPath) {
+          path = newPath;
+        } else if (folder.delimiter.isNotEmpty &&
+            folder.path.startsWith('$oldPath${folder.delimiter}')) {
+          path = newPath + folder.path.substring(oldPath.length);
+        } else {
+          path = null;
+        }
+        if (path == null) continue;
+        _db.execute(
+          'UPDATE d_folders SET path = ?, name = ? '
+          'WHERE account_id = ? AND folder_id = ?',
+          [
+            path,
+            folder.path == oldPath ? newName : folder.name,
+            accountId,
+            folder.folderId,
+          ],
+        );
+      }
+      _linkParents(accountId);
+    });
+  }
+
+  /// Forgets a folder the user deleted on the server, with its mail.
+  void deleteFolder(String accountId, String folderId) {
+    transaction(() {
+      for (final row in _db.select(
+        'SELECT local_id FROM d_messages WHERE account_id = ? AND folder_id = ?',
+        [accountId, folderId],
+      )) {
+        deleteMessage(accountId, row['local_id'] as String);
+      }
+      _db.execute(
+        'DELETE FROM d_folders WHERE account_id = ? AND folder_id = ?',
+        [accountId, folderId],
+      );
+    });
   }
 
   /// After a UIDVALIDITY change: detach every message of the folder from its

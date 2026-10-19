@@ -174,6 +174,18 @@ class SyncEngine {
       }
       await _prefetchBodies(report, outOfTime);
 
+      if (!report.stoppedEarly) {
+        // A mail this app moved here that the server still does not list
+        // after a complete pass is not coming.
+        _store.dropUnmatchedMoves(
+          accountId,
+          folderId,
+          beforeMs:
+              _store.now.millisecondsSinceEpoch -
+              const Duration(minutes: 10).inMilliseconds,
+        );
+      }
+
       // The position only moves over a pass that finished; after an early
       // stop the old one stays so the next pass looks again.
       _store.recordFolderSync(

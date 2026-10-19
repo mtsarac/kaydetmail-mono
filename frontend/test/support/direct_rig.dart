@@ -34,10 +34,19 @@ class DirectRig {
     Duration staleAfter = const Duration(seconds: 30),
     Set<String>? capabilities,
     bool addInbox = true,
+    String namespacePrefix = '',
+    String delimiter = '/',
   }) : clock = TestClock() {
     imap = capabilities == null
-        ? FakeImapService()
-        : FakeImapService(capabilities: capabilities);
+        ? FakeImapService(
+            namespacePrefix: namespacePrefix,
+            delimiter: delimiter,
+          )
+        : FakeImapService(
+            capabilities: capabilities,
+            namespacePrefix: namespacePrefix,
+            delimiter: delimiter,
+          );
     if (addInbox) imap.addFolder('INBOX', use: FolderRole.inbox);
     store = DirectStore(sqlite3.openInMemory(), clock: clock.call);
     runtime = DirectAccountRuntime(

@@ -11,28 +11,6 @@ mixin _DirectUnsupportedApi on _DirectGatewayBase {
   Future<List<MailSession>> getSessions() async => throw _unsupported();
   Future<void> deleteSession(String sessionId) async => throw _unsupported();
 
-  Future<ApiMailFolder> createFolder(String name, {String? parentId}) async =>
-      throw _unsupported();
-  Future<ApiMailFolder> renameFolder(String id, String name) async =>
-      throw _unsupported();
-  Future<ApiMailFolder> setFolderParent(String id, String? parentId) async =>
-      throw _unsupported();
-  Future<ApiMailFolder> setFolderRole(String id, String? role) async =>
-      throw _unsupported();
-  Future<void> deleteFolder(String id) async => throw _unsupported();
-
-  Future<BulkActionResult> mailAction(String id, String action) async =>
-      throw _unsupported();
-  Future<BulkActionResult> moveMail(String id, String folderId) async =>
-      throw _unsupported();
-  Future<BulkActionResult> copyMail(String id, String folderId) async =>
-      throw _unsupported();
-  Future<List<BulkActionResult>> bulkAction(
-    String action,
-    List<String> mailIds, {
-    String? folderId,
-  }) async => throw _unsupported();
-
   Future<List<BulkActionResult>> setPinned(
     List<String> mailIds,
     bool pinned,

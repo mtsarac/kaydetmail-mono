@@ -412,19 +412,28 @@ class FakeImapService implements ImapService {
   Future<void> renameFolder(String from, String to) async {
     _enter('renameFolder', '$from -> $to');
     final old = _folder(from);
-    final renamed =
-        FakeFolder(
-            to,
-            delimiter: old.delimiter,
-            specialUse: old.specialUse,
-            uidValidity: old.uidValidity,
-          )
-          ..uidNext = old.uidNext
-          ..highestModSeq = old.highestModSeq
-          ..messages.addAll(old.messages);
-    folders
-      ..remove(from)
-      ..[to] = renamed;
+    // Like a real server (RFC 3501 §6.3.5): everything below moves with it.
+    final affected = [
+      for (final f in folders.values)
+        if (f.path == from ||
+            (old.delimiter.isNotEmpty &&
+                f.path.startsWith('$from${old.delimiter}')))
+          f,
+    ];
+    for (final f in affected) {
+      folders.remove(f.path);
+      final path = f.path == from ? to : to + f.path.substring(from.length);
+      folders[path] =
+          FakeFolder(
+              path,
+              delimiter: f.delimiter,
+              specialUse: f.specialUse,
+              uidValidity: f.uidValidity,
+            )
+            ..uidNext = f.uidNext
+            ..highestModSeq = f.highestModSeq
+            ..messages.addAll(f.messages);
+    }
   }
 
   @override
