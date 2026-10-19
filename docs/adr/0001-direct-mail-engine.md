@@ -89,6 +89,31 @@ against Dovecot, the cPanel certificate-name mismatch with a real host,
 background isolates on devices. These are tracked as device/server QA items,
 not assumed to work.
 
+## Findings after building
+
+Things the implementation and the real-server (GreenMail) tests showed that the
+first draft of this decision did not foresee:
+
+- **Attachment names.** Non-ASCII file names must be encoded as RFC 2231
+  `filename*`/`name*` with an ASCII fallback; raw UTF-8 headers displayed
+  garbled on the receiving side.
+- **RENAME.** GreenMail resolves the RENAME target relative to the old parent.
+  After a rename the gateway reads the server's own folder list and fails
+  cleanly if the folder did not land where requested, instead of trusting the
+  `OK`.
+- **Backfill frontier.** `oldestSyncedUid` is separate from the lowest stored
+  UID. Only the first pass and backfill move it, so messages imported by a
+  remote search cannot leave a hole that backfill would then skip.
+- **Remote search.** Hits are imported (at most 40 per call) together with
+  their bodies so the local search finds them afterwards; already stored hits
+  that lack a body get one too. Non-ASCII queries are refused
+  (`capability_missing`) because IMAP SEARCH without `UTF8` support is unsafe.
+- **Local notifications.** `PushService` was split so local notifications work
+  without Firebase; direct accounts never register a push token.
+- **No background execution yet.** Mail alerts and scheduled sends run while
+  the app runs (plus a short grace after it leaves the foreground). WorkManager
+  / BGTask needs native setup that is not verified and is left as follow-up.
+
 ## Alternatives considered
 
 - **Original `enough_mail`.** Does not resolve (above).
