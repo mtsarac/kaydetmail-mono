@@ -300,4 +300,7 @@ class ApiMailService extends _ApiMailServiceBase
 
   @override
   Stream<GatewayEvent> get events => const Stream.empty();
+
+  @override
+  void setForeground(bool foreground) {}
 }

@@ -71,6 +71,56 @@ class PushService {
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
 
+  static bool _localReady = false;
+
+  /// The plugin that shows notifications built on this device. Direct
+  /// (IMAP/SMTP) accounts use it without any Firebase involved.
+  static FlutterLocalNotificationsPlugin get localPlugin => _local;
+
+  /// Prepares notifications raised on this device and routes a tap that
+  /// started the app. Independent of Firebase, so accounts without a backend
+  /// can notify on a build that has no push configuration. Safe to call many
+  /// times; never throws.
+  static Future<void> initializeLocal() async {
+    if (_localReady || !isSupportedPlatform) return;
+    _localReady = true;
+    try {
+      await MailNotifications.initialize(
+        _local,
+        onResponse: _onNotificationResponse,
+      );
+      final launch = await _local.getNotificationAppLaunchDetails();
+      final launchResponse = launch?.notificationResponse;
+      if (launch?.didNotificationLaunchApp == true && launchResponse != null) {
+        _onNotificationResponse(launchResponse);
+      }
+    } catch (_) {
+      _localReady = false;
+      debugPrint('PushService: local notifications unavailable.');
+    }
+  }
+
+  /// Asks the system for permission to show notifications. Only needed by
+  /// accounts that notify from this device; push asks for it itself.
+  static Future<void> requestLocalPermission() async {
+    if (!isSupportedPlatform) return;
+    try {
+      await initializeLocal();
+      await _local
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.requestNotificationsPermission();
+      await _local
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    } catch (_) {
+      debugPrint('PushService: notification permission request skipped.');
+    }
+  }
+
   /// Emits a mail id whenever the user taps a push notification, or once on
   /// launch if the app was cold-started from one; `reply` is set when the
   /// notification's "Yanıtla" action was used. `new_mail`, `snooze_expired`
@@ -98,15 +148,7 @@ class PushService {
       final initial = await messaging.getInitialMessage();
       if (initial != null) _routeTap(initial);
 
-      await MailNotifications.initialize(
-        _local,
-        onResponse: _onNotificationResponse,
-      );
-      final launch = await _local.getNotificationAppLaunchDetails();
-      final launchResponse = launch?.notificationResponse;
-      if (launch?.didNotificationLaunchApp == true && launchResponse != null) {
-        _onNotificationResponse(launchResponse);
-      }
+      await initializeLocal();
       FirebaseMessaging.onMessage.listen((message) {
         unawaited(_showForeground(message));
         unawaited(

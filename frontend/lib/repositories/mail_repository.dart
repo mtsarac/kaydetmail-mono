@@ -160,6 +160,11 @@ abstract class MailRepository extends ChangeNotifier {
   AccountCapabilities capabilitiesOf(String accountId) =>
       const AccountCapabilities.backend();
 
+  /// Whether the app is in front of the user. Accounts that watch their own
+  /// mailbox (direct accounts) keep a live connection while it is, and raise
+  /// notifications for mail that arrives while it is not.
+  void setAppActive(bool active) {}
+
   /// Connects a mailbox straight to its IMAP/SMTP servers from this device,
   /// with no KaydetMail backend in between. The servers are tried before
   /// anything is stored; failures arrive as [ApiException]s with stable codes

@@ -264,14 +264,47 @@ enum GatewayEventKind {
   needsReauthentication,
 }
 
+/// A message that arrived while the app was running, with what a
+/// notification needs to describe it.
+class IncomingMail {
+  const IncomingMail({
+    required this.mailId,
+    required this.folderId,
+    required this.folderType,
+    required this.sender,
+    required this.subject,
+    required this.preview,
+  });
+
+  final String mailId;
+  final String folderId;
+
+  /// `Inbox`, `Sent`, … as in [ApiMailFolder.type].
+  final String folderType;
+  final String sender;
+  final String subject;
+
+  /// A line of the text, empty when the body has not been fetched.
+  final String preview;
+}
+
 /// A change a gateway noticed on its own (background sync, push, watch).
 /// Gateways that only answer requests never emit any.
 class GatewayEvent {
-  const GatewayEvent(this.kind, {this.folderId, this.newMailIds = const []});
+  const GatewayEvent(
+    this.kind, {
+    this.folderId,
+    this.newMailIds = const [],
+    this.incoming = const [],
+  });
 
   final GatewayEventKind kind;
   final String? folderId;
 
   /// Mail stored for the first time by the pass that raised this event.
   final List<String> newMailIds;
+
+  /// The unread ones among them that are recent, described for a
+  /// notification (at most a handful).
+  final List<IncomingMail> incoming;
 }

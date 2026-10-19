@@ -37,9 +37,12 @@ import '../services/api_exception.dart';
 import '../services/api_mail_service.dart';
 import '../services/device_identifier_provider.dart';
 import '../services/direct/direct_account_service.dart';
+import '../services/direct/direct_alerts.dart';
+import '../services/mail_notifications.dart';
 import '../services/direct/direct_account_setup.dart';
 import '../services/direct/direct_store.dart';
 import '../services/direct/settings_discovery.dart';
+import '../state/app_settings_controller.dart';
 import '../services/gateway/mail_gateway.dart';
 import '../services/local_mail_flags_store.dart';
 import '../services/mail_cache.dart';
@@ -97,6 +100,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
     AccountDataPurger? accountDataPurger,
     this._directAccountService,
     this._settingsDiscovery,
+    this._directMailAlerts,
   }) : _initialAuthService = authService,
        _initialMailService = mailService,
        _attachmentDownloadManager =
@@ -124,6 +128,11 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
   // never touches them.
   DirectAccountService? _directAccountService;
   SettingsDiscovery? _settingsDiscovery;
+
+  /// Shows notifications for mail a direct account receives while the app is
+  /// not in front; null where the platform cannot.
+  final MailNotificationDisplay? _directMailAlerts;
+  bool _appActive = false;
   DirectStore? _directStore;
 
   final Future<MailCache> Function()? _openCache;
@@ -625,6 +634,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
     _sessions[account.id] = session;
     authService?.client.onAuthenticationLost = () => _expireSession(account.id);
     _listenToGateway(session);
+    mailService.setForeground(_appActive);
     try {
       _cache ??= await _openCacheOrMemory();
       final flags = LocalMailFlagsStore(account.id, _cache!);
@@ -1111,6 +1121,41 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
     await _activateSession(await gateway.getAccount(), mailService: gateway);
   }
 
+  @override
+  void setAppActive(bool active) {
+    if (_appActive == active) return;
+    _appActive = active;
+    for (final session in _sessions.values) {
+      session.mailService.setForeground(active);
+    }
+  }
+
+  /// Tells the user about mail that arrived while the app was not in front.
+  Future<void> _notifyIncoming(
+    AccountSession session,
+    GatewayEvent event,
+  ) async {
+    final display = _directMailAlerts;
+    if (display == null ||
+        _appActive ||
+        event.incoming.isEmpty ||
+        !AppSettingsController.instance.notificationsEnabled) {
+      return;
+    }
+    try {
+      final settings = await session.mailService.getNotificationSettings();
+      for (final alert in DirectMailAlerts.build(
+        accountId: session.account.id,
+        mail: event.incoming,
+        settings: settings,
+      )) {
+        await display.show(alert);
+      }
+    } catch (_) {
+      // A notification that cannot be shown is not worth an error.
+    }
+  }
+
   /// Follows what a gateway notices on its own: background sync results and
   /// changes in whether the mail server can be reached.
   void _listenToGateway(AccountSession session) {
@@ -1140,6 +1185,7 @@ class ApiMailRepository extends MailRepository implements RepositoryContext {
             session,
             await session.mailService.getFolders(),
           );
+          unawaited(_notifyIncoming(session, event));
         case GatewayEventKind.scheduledSends:
           await _scheduled.refreshScheduledSends();
         case GatewayEventKind.folders:

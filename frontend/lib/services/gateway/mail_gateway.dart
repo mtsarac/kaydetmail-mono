@@ -38,6 +38,11 @@ abstract interface class MailGateway {
   /// changed it so the repository can re-read.
   Stream<GatewayEvent> get events;
 
+  /// Tells the gateway whether the app is in front of the user. A gateway
+  /// that watches the mailbox itself keeps a live connection open while it
+  /// is, and lets go when it is not.
+  void setForeground(bool foreground);
+
   // --- Account ---------------------------------------------------------
 
   Future<MailAccount> getAccount();

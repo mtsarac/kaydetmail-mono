@@ -82,6 +82,7 @@ class DirectRig {
       syncOptions: options,
       staleAfter: staleAfter,
       schedulerTick: null,
+      backgroundGrace: Duration.zero,
       clock: clock.call,
     );
   }

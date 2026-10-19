@@ -5,6 +5,7 @@ import 'package:kaydetmail/services/api_auth_service.dart' show MailSecurity;
 import 'package:kaydetmail/services/direct/direct_account_service.dart';
 import 'package:kaydetmail/services/direct/direct_account_setup.dart';
 import 'package:kaydetmail/services/direct/direct_credential_store.dart';
+import 'package:kaydetmail/services/mail_notifications.dart';
 import 'package:kaydetmail/services/direct/direct_errors.dart';
 import 'package:kaydetmail/services/direct/imap_models.dart';
 import 'package:kaydetmail/services/direct/sync_engine.dart';
@@ -16,6 +17,17 @@ import 'support/direct_rig.dart';
 import 'support/fake_imap_service.dart';
 import 'support/fake_smtp_sender.dart';
 import 'support/memory_token_storage.dart';
+
+class _RecordingDisplay implements MailNotificationDisplay {
+  final List<MailNotification> shown = [];
+
+  @override
+  Future<void> show(MailNotification notification, {String? notice}) async =>
+      shown.add(notification);
+
+  @override
+  Future<void> cancel(int id) async {}
+}
 
 DirectAccountSetup _setup(String email) => DirectAccountSetup(
   email: email,
@@ -61,11 +73,14 @@ void main() {
     staleAfter: staleAfter,
   );
 
+  late _RecordingDisplay display;
+
   ApiMailRepository repository({
     Duration staleAfter = const Duration(minutes: 5),
   }) => ApiMailRepository(
     openCache: () async => cache,
     directAccountService: accounts(staleAfter: staleAfter),
+    directMailAlerts: display,
   );
 
   setUp(() {
@@ -73,6 +88,7 @@ void main() {
     cache = MailCache.inMemory();
     keystore = MemoryTokenStorage();
     smtp = FakeSmtpSender();
+    display = _RecordingDisplay();
     imap = FakeImapService()
       ..addFolder('INBOX', use: FolderRole.inbox)
       ..addFolder('Sent', use: FolderRole.sent);
@@ -243,6 +259,52 @@ void main() {
     );
     expect(await SessionStore.loadEmails(), isEmpty);
   });
+
+  test(
+    'mail that arrives while the app is away raises a notification',
+    () async {
+      imap.add('INBOX', rigMail('old'), date: DateTime.now());
+      final repo = repository();
+      await repo.connectDirectAccount(_setup('ayse@example.test'));
+      await repo.refreshEmails(MailFolder.inbox);
+      repo.setAppActive(true);
+      await _until(() => imap.count('idle') > 0);
+      repo.setAppActive(false); // still watched for a while
+
+      imap.add(
+        'INBOX',
+        rigMail('new', subject: 'Acil', from: 'Ali <ali@example.org>'),
+        date: DateTime.now(),
+      );
+      imap.pushes.add(ImapPush.newMail);
+      await _until(() => display.shown.isNotEmpty);
+      expect(display.shown.single.title, 'Ali');
+      expect(display.shown.single.body, startsWith('Acil'));
+      repo.setAppActive(true);
+      repo.setAppActive(false);
+    },
+  );
+
+  test(
+    'with the app in front the list updates and nothing is announced',
+    () async {
+      imap.add('INBOX', rigMail('old'), date: DateTime.now());
+      final repo = repository();
+      await repo.connectDirectAccount(_setup('ayse@example.test'));
+      await repo.refreshEmails(MailFolder.inbox);
+      repo.setAppActive(true);
+      await _until(() => imap.count('idle') > 0);
+
+      imap.add('INBOX', rigMail('new', subject: 'Yeni'), date: DateTime.now());
+      imap.pushes.add(ImapPush.newMail);
+      await _until(
+        () => repo
+            .getEmailsInFolder(MailFolder.inbox)
+            .any((e) => e.subject == 'Yeni'),
+      );
+      expect(display.shown, isEmpty);
+    },
+  );
 
   test('a backend-only repository refuses direct accounts politely', () async {
     final repo = ApiMailRepository(openCache: () async => cache);

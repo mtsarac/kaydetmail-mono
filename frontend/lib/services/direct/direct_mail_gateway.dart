@@ -55,6 +55,7 @@ part 'direct_gateway/local.dart';
 part 'direct_gateway/mail.dart';
 part 'direct_gateway/scheduled.dart';
 part 'direct_gateway/search.dart';
+part 'direct_gateway/watch.dart';
 part 'direct_gateway/sessions.dart';
 
 /// Shared state of the gateway's endpoint groups.
@@ -65,6 +66,7 @@ abstract class _DirectGatewayBase {
     this.syncOptions,
     this.staleAfter,
     this.schedulerTick,
+    this.backgroundGrace,
     DateTime Function()? clock,
   ) : _clock = clock ?? DateTime.now;
 
@@ -81,6 +83,9 @@ abstract class _DirectGatewayBase {
   /// [DirectMailGateway.runDueScheduledSends] themselves).
   final Duration? schedulerTick;
   Timer? _schedulerTimer;
+
+  /// How long the Inbox is still watched after the app left the front.
+  final Duration backgroundGrace;
 
   final StreamController<GatewayEvent> _events =
       StreamController<GatewayEvent>.broadcast();
@@ -227,32 +232,73 @@ abstract class _DirectGatewayBase {
     return total;
   }
 
-  /// Starts a background pass over [folderId] unless one is running. The
-  /// repository learns of changes through [events]; failures only update the
-  /// reachability state.
+  /// Folders that changed on the server while a pass over them was running;
+  /// they get another pass when it ends, so nothing a push announced is lost.
+  final Set<String> _syncAgain = {};
+
+  /// Starts a background pass over [folderId] unless one is running (then
+  /// one more follows it). The repository learns of changes through
+  /// [events]; failures only update the reachability state.
   void _syncSoon(String folderId) {
-    if (!_syncing.add(folderId)) return;
+    if (!_syncing.add(folderId)) {
+      _syncAgain.add(folderId);
+      return;
+    }
     unawaited(() async {
       try {
-        final report = await _syncFolderNow(folderId);
-        if (report.newLocalIds.isNotEmpty ||
-            report.flagChanges > 0 ||
-            report.removed > 0 ||
-            report.uidValidityChanged) {
-          _emit(
-            GatewayEvent(
-              GatewayEventKind.mail,
-              folderId: folderId,
-              newMailIds: report.newLocalIds,
-            ),
-          );
-        }
+        do {
+          _syncAgain.remove(folderId);
+          final wasSynced =
+              store.folder(accountId, folderId)?.lastSyncMs != null;
+          final report = await _syncFolderNow(folderId);
+          if (report.newLocalIds.isNotEmpty ||
+              report.flagChanges > 0 ||
+              report.removed > 0 ||
+              report.uidValidityChanged) {
+            _emit(
+              GatewayEvent(
+                GatewayEventKind.mail,
+                folderId: folderId,
+                newMailIds: report.newLocalIds,
+                // The first pass over a folder brings in old mail, not news.
+                incoming: wasSynced ? _describe(report.newLocalIds) : const [],
+              ),
+            );
+          }
+        } while (_syncAgain.contains(folderId));
       } catch (_) {
         // Already recorded by _run / the engine.
       } finally {
         _syncing.remove(folderId);
+        _syncAgain.remove(folderId);
       }
     }());
+  }
+
+  /// Unread, recent mail among [localIds], described for a notification.
+  List<IncomingMail> _describe(List<String> localIds) {
+    final cutoff = _clock()
+        .subtract(const Duration(days: 2))
+        .millisecondsSinceEpoch;
+    final out = <IncomingMail>[];
+    for (final id in localIds) {
+      final row = store.message(accountId, id);
+      if (row == null || row.isRead || row.sortMs < cutoff) continue;
+      final folder = store.folder(accountId, row.folderId);
+      if (folder == null) continue;
+      out.add(
+        IncomingMail(
+          mailId: id,
+          folderId: row.folderId,
+          folderType: folder.role.wireName,
+          sender: row.fromName.isNotEmpty ? row.fromName : row.fromAddress,
+          subject: row.subject,
+          preview: row.snippet,
+        ),
+      );
+      if (out.length == 5) break;
+    }
+    return out;
   }
 }
 
@@ -270,7 +316,8 @@ class DirectMailGateway extends _DirectGatewayBase
         _DirectLocalApi,
         _DirectComposeApi,
         _DirectScheduledApi,
-        _DirectSearchApi
+        _DirectSearchApi,
+        _DirectWatchApi
     implements MailGateway {
   DirectMailGateway({
     required DirectAccountRuntime runtime,
@@ -278,8 +325,17 @@ class DirectMailGateway extends _DirectGatewayBase
     SyncOptions syncOptions = const SyncOptions(),
     Duration staleAfter = const Duration(seconds: 30),
     Duration? schedulerTick = const Duration(minutes: 5),
+    Duration backgroundGrace = const Duration(minutes: 10),
     DateTime Function()? clock,
-  }) : super(runtime, store, syncOptions, staleAfter, schedulerTick, clock) {
+  }) : super(
+         runtime,
+         store,
+         syncOptions,
+         staleAfter,
+         schedulerTick,
+         backgroundGrace,
+         clock,
+       ) {
     // A send that came due while the app was closed goes out now.
     _armScheduler();
   }
@@ -287,6 +343,8 @@ class DirectMailGateway extends _DirectGatewayBase
   /// Closes the connection and stops reporting.
   Future<void> dispose() async {
     _schedulerTimer?.cancel();
+    _graceTimer?.cancel();
+    _stopWatching();
     await runtime.close();
     await _events.close();
   }
