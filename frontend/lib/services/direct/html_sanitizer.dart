@@ -74,6 +74,24 @@ class MailHtmlSanitizer {
   };
 
   static const _urlAttributes = {'href', 'src', 'srcset', 'background'};
+
+  /// Lets the remote images of already-sanitised [html] load, as if it had
+  /// been sanitised with remote images allowed: images moved aside by
+  /// [sanitize] come back, except the ones recognised as tracking pixels.
+  /// Links and every other kind of remote content stay as they are.
+  static String unblockRemoteImages(String html) {
+    if (html.isEmpty) return html;
+    final fragment = html_parser.parseFragment(html);
+    for (final image in fragment.querySelectorAll('img[data-remote-src]')) {
+      if (image.attributes.containsKey('data-kaydet-tracking')) continue;
+      var source = image.attributes['data-remote-src']!.trim();
+      if (source.startsWith('//')) source = 'https:$source';
+      image.attributes['src'] = source;
+      image.attributes.remove('data-remote-src');
+    }
+    return fragment.outerHtml;
+  }
+
   static const _allowedSchemes = {'http', 'https', 'mailto', 'tel', 'cid'};
 
   /// Sanitises [rawHtml]. [cidImages] maps lower-cased Content-IDs (without
@@ -231,6 +249,11 @@ class MailHtmlSanitizer {
         }
         element.attributes['data-remote-$attribute'] = value;
         element.attributes.remove(attribute);
+        if (attribute == 'src' && trackingSources.contains(value)) {
+          // Remembered so that allowing remote images later (see
+          // [unblockRemoteImages]) can still leave this one blocked.
+          element.attributes['data-kaydet-tracking'] = '1';
+        }
       }
     }
   }

@@ -210,4 +210,45 @@ void main() {
       expect(r.html, isNot(contains(png)));
     });
   });
+
+  group('allowing remote images afterwards', () {
+    const raw =
+        '<p>hi</p><img src="https://images.example/photo.jpg" width="600">'
+        '<img src="//cdn.example/b.png">'
+        '<img src="https://t.example/o.gif" width="1" height="1">'
+        '<a href="https://site.example/x">link</a>';
+
+    test('brings images back and leaves tracking pixels and links blocked', () {
+      final blocked = sanitize(raw).html;
+      final opened = MailHtmlSanitizer.unblockRemoteImages(blocked);
+      expect(opened, contains('src="https://images.example/photo.jpg"'));
+      expect(opened, contains('src="https://cdn.example/b.png"'));
+      expect(opened, isNot(contains(' src="https://t.example')));
+      expect(opened, contains('data-remote-src="https://t.example/o.gif"'));
+      expect(opened, contains('data-remote-href="https://site.example/x"'));
+    });
+
+    test('gives the same result as sanitising with images allowed', () {
+      final viaUnblock = MailHtmlSanitizer.unblockRemoteImages(
+        sanitize(raw).html,
+      );
+      final direct = sanitize(raw, allowRemoteImages: true).html;
+      for (final needle in [
+        'src="https://images.example/photo.jpg"',
+        'src="https://cdn.example/b.png"',
+        'data-remote-src="https://t.example/o.gif"',
+        'data-remote-href="https://site.example/x"',
+      ]) {
+        expect(
+          viaUnblock.contains(needle),
+          direct.contains(needle),
+          reason: needle,
+        );
+      }
+    });
+
+    test('an empty body stays empty', () {
+      expect(MailHtmlSanitizer.unblockRemoteImages(''), '');
+    });
+  });
 }
