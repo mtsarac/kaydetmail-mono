@@ -503,6 +503,24 @@ class DirectStore {
         [enabled ? 1 : 0, accountId, folderId],
       );
 
+  /// Marks a folder's older mail as still to be fetched (or as done).
+  void setFolderBackfillComplete(
+    String accountId,
+    String folderId,
+    bool complete,
+  ) => _db.execute(
+    'UPDATE d_folders SET backfill_complete = ? WHERE account_id = ? AND folder_id = ?',
+    [complete ? 1 : 0, accountId, folderId],
+  );
+
+  /// Stores the UIDVALIDITY the server reports, so rows ingested next carry
+  /// it. Does not touch the rest of the sync position.
+  void setFolderUidValidity(String accountId, String folderId, int validity) =>
+      _db.execute(
+        'UPDATE d_folders SET uid_validity = ? WHERE account_id = ? AND folder_id = ?',
+        [validity, accountId, folderId],
+      );
+
   /// Records what a successful sync pass learned about a folder.
   void recordFolderSync(
     String accountId,
@@ -1021,16 +1039,23 @@ class DirectStore {
       ThreadRow._(row),
   ];
 
-  /// Addresses (lower-case) on any message of [threadId], both directions.
+  /// Addresses (lower-case) on any message of [threadId]: sender, To, Cc,
+  /// Bcc and Reply-To alike.
   Set<String> threadParticipants(String accountId, String threadId) {
     final out = <String>{};
     for (final row in _db.select(
-      'SELECT from_addr, to_json, cc_json FROM d_messages WHERE account_id = ? AND thread_id = ?',
+      'SELECT from_addr, to_json, cc_json, bcc_json, reply_to_json '
+      'FROM d_messages WHERE account_id = ? AND thread_id = ?',
       [accountId, threadId],
     )) {
       final from = (row['from_addr'] as String).toLowerCase();
       if (from.isNotEmpty) out.add(from);
-      for (final key in const ['to_json', 'cc_json']) {
+      for (final key in const [
+        'to_json',
+        'cc_json',
+        'bcc_json',
+        'reply_to_json',
+      ]) {
         for (final r in _recipientsFromJson(row[key] as String)) {
           out.add(r.address.toLowerCase());
         }

@@ -255,8 +255,7 @@ void main() {
         ]);
         expect(repo.getScopedEmails().map((email) => email.id), ['mail-1a']);
         expect(
-          (await repo.searchEmailsOnServer(query: 'mail'))
-              .items
+          (await repo.searchEmailsOnServer(query: 'mail')).items
               .map((email) => email.id),
           containsAll(['mail-1a', 'mail-2a']),
         );
@@ -524,20 +523,20 @@ class _RecordingMailService extends ApiMailService {
     int pageSize = 20,
   }) async {
     final matches = [
-    for (final id in mailIds)
-      if (id.contains(query))
-        Email(
-          id: id,
-          senderName: 'Sender',
-          senderEmail: 'sender@example.com',
-          recipients: const ['me@example.com'],
-          subject: 'Subject $id',
-          bodyText: '',
-          timestamp: DateTime.parse('2026-01-01T00:00:00Z'),
-          isRead: false,
-          folder: MailFolder.inbox,
-          accountId: accountId,
-        ),
+      for (final id in mailIds)
+        if (id.contains(query))
+          Email(
+            id: id,
+            senderName: 'Sender',
+            senderEmail: 'sender@example.com',
+            recipients: const ['me@example.com'],
+            subject: 'Subject $id',
+            bodyText: '',
+            timestamp: DateTime.parse('2026-01-01T00:00:00Z'),
+            isRead: false,
+            folder: MailFolder.inbox,
+            accountId: accountId,
+          ),
     ];
     return MailListPage(
       items: matches.skip((page - 1) * pageSize).take(pageSize).toList(),

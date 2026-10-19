@@ -27,12 +27,20 @@ class DemoMailRepository extends MailRepository {
   static const demoAccounts = [
     MailAccount(
       id: 'acc-1',
-      email: 'ayse.yilmaz.uzun.bir.eposta.adresi@example-kurumsal-alan-adi.com.tr',
+      email:
+          'ayse.yilmaz.uzun.bir.eposta.adresi@example-kurumsal-alan-adi.com.tr',
       displayName: 'Ayşe Yılmaz',
       provider: AccountProvider.google,
-      quota: AccountQuota(usedBytes: 8 * 1024 * 1024 * 1024, limitBytes: 15 * 1024 * 1024 * 1024),
+      quota: AccountQuota(
+        usedBytes: 8 * 1024 * 1024 * 1024,
+        limitBytes: 15 * 1024 * 1024 * 1024,
+      ),
     ),
-    MailAccount(id: 'acc-2', email: 'ben@outlook.com', provider: AccountProvider.microsoft),
+    MailAccount(
+      id: 'acc-2',
+      email: 'ben@outlook.com',
+      provider: AccountProvider.microsoft,
+    ),
     MailAccount(
       id: 'acc-3',
       email: 'destek@example.com',
@@ -166,8 +174,10 @@ class DemoMailRepository extends MailRepository {
       _emails.where((e) => e.id == id).firstOrNull;
 
   @override
-  Future<Uint8List> downloadAttachment(String mailId, Attachment attachment) async =>
-      Uint8List(0);
+  Future<Uint8List> downloadAttachment(
+    String mailId,
+    Attachment attachment,
+  ) async => Uint8List(0);
 
   @override
   List<Email> getThreadEmails(String threadId) => [
@@ -188,18 +198,25 @@ class DemoMailRepository extends MailRepository {
       );
 
   @override
-  Future<ComposePrefill> getComposePrefill(String sourceMailId, String mode) async {
+  Future<ComposePrefill> getComposePrefill(
+    String sourceMailId,
+    String mode,
+  ) async {
     final source = _emails.firstWhere((e) => e.id == sourceMailId);
     return ComposePrefill(
       sourceMailId: sourceMailId,
       to: mode == 'forward' ? const [] : [source.senderEmail],
       cc: mode == 'reply-all' ? source.recipients : const [],
-      suggestedSubject: '${mode == 'forward' ? 'Fwd' : 'Re'}: ${source.subject}',
+      suggestedSubject:
+          '${mode == 'forward' ? 'Fwd' : 'Re'}: ${source.subject}',
     );
   }
 
   @override
-  Future<List<MailSignature>> listSignatures(String accountId, {bool refresh = false}) async => [
+  Future<List<MailSignature>> listSignatures(
+    String accountId, {
+    bool refresh = false,
+  }) async => [
     MailSignature(
       id: 'sig-1',
       name: 'Kurumsal imza',
@@ -215,10 +232,16 @@ class DemoMailRepository extends MailRepository {
       const SignatureDefaults();
 
   @override
-  Future<List<MailIdentity>> listIdentities(String accountId, {bool refresh = false}) async => const [];
+  Future<List<MailIdentity>> listIdentities(
+    String accountId, {
+    bool refresh = false,
+  }) async => const [];
 
   @override
-  Future<List<MailTemplate>> listTemplates(String accountId, {bool refresh = false}) async => [
+  Future<List<MailTemplate>> listTemplates(
+    String accountId, {
+    bool refresh = false,
+  }) async => [
     MailTemplate(
       id: 't1',
       name: 'Toplantı daveti — uzun bir şablon adı örneği',
@@ -326,7 +349,11 @@ class DemoMailRepository extends MailRepository {
 
   static const _labels = [
     MailLabel(id: 'l1', name: 'İş', color: Color(0xFF3E7CB1)),
-    MailLabel(id: 'l2', name: 'Çok uzun bir etiket adı örneği', color: Color(0xFF2E8B6E)),
+    MailLabel(
+      id: 'l2',
+      name: 'Çok uzun bir etiket adı örneği',
+      color: Color(0xFF2E8B6E),
+    ),
   ];
 
   @override
@@ -353,10 +380,16 @@ class DemoMailRepository extends MailRepository {
   Future<void> deleteLabel(String labelId) async {}
 
   @override
-  Future<void> addLabelsToEmails(List<String> emailIds, List<String> labelIds) async {}
+  Future<void> addLabelsToEmails(
+    List<String> emailIds,
+    List<String> labelIds,
+  ) async {}
 
   @override
-  Future<void> removeLabelsFromEmails(List<String> emailIds, List<String> labelIds) async {}
+  Future<void> removeLabelsFromEmails(
+    List<String> emailIds,
+    List<String> labelIds,
+  ) async {}
 
   @override
   List<ManualContact> getManualContacts() => const [];
@@ -365,8 +398,16 @@ class DemoMailRepository extends MailRepository {
   List<ManualContact> getManualContactsForAccount(String accountId) => const [];
 
   @override
-  Future<ManualContact> addManualContact({required String email, String? displayName, String? accountId}) async =>
-      ManualContact(id: 'c1', accountId: 'acc-1', email: email, displayName: displayName);
+  Future<ManualContact> addManualContact({
+    required String email,
+    String? displayName,
+    String? accountId,
+  }) async => ManualContact(
+    id: 'c1',
+    accountId: 'acc-1',
+    email: email,
+    displayName: displayName,
+  );
 
   @override
   Future<void> updateManualContact({
@@ -442,7 +483,8 @@ const _lorem =
 
 List<Email> demoEmails() {
   final base = DateTime(2026, 9, 28, 14, 30);
-  const table = '<table border="1" style="width:640px"><tr><td>Ürün</td>'
+  const table =
+      '<table border="1" style="width:640px"><tr><td>Ürün</td>'
       '<td>Adet</td><td>Fiyat</td><td>Toplam</td></tr>'
       '<tr><td>Kalem</td><td>10</td><td>5,00</td><td>50,00</td></tr></table>';
   Email mail(
@@ -457,7 +499,9 @@ List<Email> demoEmails() {
     String threadId = '',
     String? html,
     List<Attachment> attachments = const [],
-    List<String> to = const ['ayse.yilmaz.uzun.bir.eposta.adresi@example-kurumsal-alan-adi.com.tr'],
+    List<String> to = const [
+      'ayse.yilmaz.uzun.bir.eposta.adresi@example-kurumsal-alan-adi.com.tr',
+    ],
     List<String> cc = const [],
     String accountId = 'acc-1',
     MailFolder folder = MailFolder.inbox,
@@ -487,26 +531,77 @@ List<Email> demoEmails() {
       'm1',
       subject: 'Çeyrek sonu raporu ve önümüzdeki dönem için bütçe planlaması hakkında',
       from: 'Muhasebe Departmanı Sorumlusu Mehmet Çelebi',
-      fromEmail: 'mehmet.celebi.cok.uzun.bir.eposta@kurumsal-alan-adi-ornegi.com.tr',
+      fromEmail:
+          'mehmet.celebi.cok.uzun.bir.eposta@kurumsal-alan-adi-ornegi.com.tr',
       pinned: true,
       threadId: 't1',
       labels: const ['l1', 'l2'],
       attachments: const [
-        Attachment(id: 'a1', name: 'ceyrek-sonu-raporu-2026-q3-final-v12-son-hali.pdf', sizeBytes: 2 * 1024 * 1024, mimeType: 'application/pdf'),
+        Attachment(
+          id: 'a1',
+          name: 'ceyrek-sonu-raporu-2026-q3-final-v12-son-hali.pdf',
+          sizeBytes: 2 * 1024 * 1024,
+          mimeType: 'application/pdf',
+        ),
         Attachment(id: 'a2', name: 'bütçe.xlsx', sizeBytes: 90 * 1024),
       ],
-      html: '<p>Merhaba <b>Ayşe</b>,</p><p>$_lorem</p>$table<ul><li>Madde bir</li><li>Madde iki</li></ul>'
+      html:
+          '<p>Merhaba <b>Ayşe</b>,</p><p>$_lorem</p>$table<ul><li>Madde bir</li><li>Madde iki</li></ul>'
           '<blockquote>Alıntı metni</blockquote>',
-      to: const ['ayse@example.com', 'ali.veli@example.com', 'uzun.alici.adresi.bir@kurumsal-alan-adi-ornegi.com.tr'],
+      to: const [
+        'ayse@example.com',
+        'ali.veli@example.com',
+        'uzun.alici.adresi.bir@kurumsal-alan-adi-ornegi.com.tr',
+      ],
       cc: const ['cc1@example.com', 'cc2@example.com'],
     ),
-    mail('m2', subject: 'Re: Çeyrek sonu raporu', from: 'Ayşe Yılmaz', fromEmail: 'ayse@example.com', minutes: 60, read: true, threadId: 't1', html: '<p>Teşekkürler, inceleyip dönüyorum.</p>'),
-    mail('m3', subject: 'Re: Re: Çeyrek sonu raporu', minutes: 120, read: true, threadId: 't1'),
+    mail(
+      'm2',
+      subject: 'Re: Çeyrek sonu raporu',
+      from: 'Ayşe Yılmaz',
+      fromEmail: 'ayse@example.com',
+      minutes: 60,
+      read: true,
+      threadId: 't1',
+      html: '<p>Teşekkürler, inceleyip dönüyorum.</p>',
+    ),
+    mail(
+      'm3',
+      subject: 'Re: Re: Çeyrek sonu raporu',
+      minutes: 120,
+      read: true,
+      threadId: 't1',
+    ),
     mail('m4', subject: 'Kısa', minutes: 200, read: true, starred: true),
-    mail('m5', subject: 'Toplantı notları', from: 'Zeynep', fromEmail: 'zeynep@example.com', minutes: 400, accountId: 'acc-2'),
-    mail('m6', subject: 'Fatura', minutes: 900, read: true, folder: MailFolder.sent),
-    mail('m7', subject: 'Taslak konu', minutes: 1000, folder: MailFolder.drafts),
+    mail(
+      'm5',
+      subject: 'Toplantı notları',
+      from: 'Zeynep',
+      fromEmail: 'zeynep@example.com',
+      minutes: 400,
+      accountId: 'acc-2',
+    ),
+    mail(
+      'm6',
+      subject: 'Fatura',
+      minutes: 900,
+      read: true,
+      folder: MailFolder.sent,
+    ),
+    mail(
+      'm7',
+      subject: 'Taslak konu',
+      minutes: 1000,
+      folder: MailFolder.drafts,
+    ),
     for (var i = 8; i < 20; i++)
-      mail('m$i', subject: 'Bülten $i — haftalık özet ve kampanyalar', from: 'Bülten $i', fromEmail: 'news$i@example.com', minutes: 1000 + i * 30, read: i.isEven),
+      mail(
+        'm$i',
+        subject: 'Bülten $i — haftalık özet ve kampanyalar',
+        from: 'Bülten $i',
+        fromEmail: 'news$i@example.com',
+        minutes: 1000 + i * 30,
+        read: i.isEven,
+      ),
   ];
 }

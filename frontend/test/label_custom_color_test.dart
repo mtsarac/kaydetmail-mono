@@ -53,36 +53,40 @@ void main() {
     AppConfig.resetForTest();
   });
 
-  testWidgets('a custom colour picked from the picker is saved with the label', (
-    tester,
-  ) async {
-    final repo = _LabelRepo();
-    await _openLabelEditor(tester, repo);
+  testWidgets(
+    'a custom colour picked from the picker is saved with the label',
+    (tester) async {
+      final repo = _LabelRepo();
+      await _openLabelEditor(tester, repo);
 
-    await tester.tap(find.text('Yeni Etiket'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).first, 'Fatura');
-    await tester.tap(find.byKey(const Key('custom-color-swatch')));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('color-picker-hex')),
-      '#123ABC',
-    );
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('color-picker-confirm')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Yeni Etiket'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, 'Fatura');
+      await tester.tap(find.byKey(const Key('custom-color-swatch')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('color-picker-hex')),
+        '#123ABC',
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('color-picker-confirm')));
+      await tester.pumpAndSettle();
 
-    // The chosen colour now shows as its own selected swatch.
-    expect(find.byKey(const Key('custom-color-current')), findsOneWidget);
+      // The chosen colour now shows as its own selected swatch.
+      expect(find.byKey(const Key('custom-color-current')), findsOneWidget);
 
-    await tester.tap(find.text('Oluştur'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Oluştur'));
+      await tester.pumpAndSettle();
 
-    expect(repo.created, hasLength(1));
-    expect(repo.created.single.name, 'Fatura');
-    expect(repo.created.single.accountId, 'acc-1');
-    expect(repo.created.single.color.toARGB32() & 0xFFFFFF, closeTo(0x123ABC, 0x0400));
-  });
+      expect(repo.created, hasLength(1));
+      expect(repo.created.single.name, 'Fatura');
+      expect(repo.created.single.accountId, 'acc-1');
+      expect(
+        repo.created.single.color.toARGB32() & 0xFFFFFF,
+        closeTo(0x123ABC, 0x0400),
+      );
+    },
+  );
 
   testWidgets('cancelling the picker keeps the preset colour', (tester) async {
     final repo = _LabelRepo();

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -65,32 +66,43 @@ void main() {
       },
     );
 
-    test('custom-folder mail read state rolls back rejected bulk action', () async {
-      final service = _FakeMailService(
-        folders: [_folder('f-1', 'Projeler', 'Projeler', type: 'Custom')],
-        pagesByFolderId: {
-          'f-1': [_page([_mail('m1'), _mail('m2')], page: 1, total: 2)],
-        },
-      );
-      final repo = await _repository(service);
-      await repo.getCustomFolderMails(accountId: 'account-1', folderId: 'f-1');
-      final pageResponse = Completer<void>();
-      service.pageResponse = pageResponse;
-      final response = Completer<List<BulkActionResult>>();
-      service.bulkResponse = response;
-      final operation = repo.markAsRead(['m1', 'm2']);
-      Future<List<Email>> mails() => repo.getCustomFolderMails(
-        accountId: 'account-1', folderId: 'f-1',
-      );
-      expect((await mails()).map((mail) => mail.isRead), [true, true]);
-      response.complete([
-        BulkActionResult(mailId: 'm1', success: true),
-        BulkActionResult(mailId: 'm2', success: false, code: 'mail_operation_conflict'),
-      ]);
-      await expectLater(operation, throwsException);
-      expect((await mails()).map((mail) => mail.isRead), [true, false]);
-      pageResponse.complete();
-    });
+    test(
+      'custom-folder mail read state rolls back rejected bulk action',
+      () async {
+        final service = _FakeMailService(
+          folders: [_folder('f-1', 'Projeler', 'Projeler', type: 'Custom')],
+          pagesByFolderId: {
+            'f-1': [
+              _page([_mail('m1'), _mail('m2')], page: 1, total: 2),
+            ],
+          },
+        );
+        final repo = await _repository(service);
+        await repo.getCustomFolderMails(
+          accountId: 'account-1',
+          folderId: 'f-1',
+        );
+        final pageResponse = Completer<void>();
+        service.pageResponse = pageResponse;
+        final response = Completer<List<BulkActionResult>>();
+        service.bulkResponse = response;
+        final operation = repo.markAsRead(['m1', 'm2']);
+        Future<List<Email>> mails() =>
+            repo.getCustomFolderMails(accountId: 'account-1', folderId: 'f-1');
+        expect((await mails()).map((mail) => mail.isRead), [true, true]);
+        response.complete([
+          BulkActionResult(mailId: 'm1', success: true),
+          BulkActionResult(
+            mailId: 'm2',
+            success: false,
+            code: 'mail_operation_conflict',
+          ),
+        ]);
+        await expectLater(operation, throwsException);
+        expect((await mails()).map((mail) => mail.isRead), [true, false]);
+        pageResponse.complete();
+      },
+    );
 
     test(
       'syncCustomFolder forwards the raw folder id; unknown accounts throw',

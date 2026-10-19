@@ -62,7 +62,10 @@ void main() {
     Color? result;
     await open(tester, (c) => result = c);
 
-    await tester.enterText(find.byKey(const Key('color-picker-hex')), '#FF8800');
+    await tester.enterText(
+      find.byKey(const Key('color-picker-hex')),
+      '#FF8800',
+    );
     await tester.pump();
     await tester.tap(find.byKey(const Key('color-picker-confirm')));
     await tester.pumpAndSettle();

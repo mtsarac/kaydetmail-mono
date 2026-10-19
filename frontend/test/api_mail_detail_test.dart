@@ -324,14 +324,22 @@ void main() {
     });
 
     test('include=body message preserves To, Cc and Bcc participants', () {
-      final service = ApiMailService(_client((_) async => http.Response('{}', 200)));
+      final service = ApiMailService(
+        _client((_) async => http.Response('{}', 200)),
+      );
       final email = service.mapConversationMessage({
         'id': 'm4',
         'folderId': 'inbox',
         'fromAddress': 'sender@example.com',
-        'to': [{'address': 'reader@example.com', 'displayName': 'Reader'}],
-        'cc': [{'address': 'team@example.com'}],
-        'bcc': [{'address': 'private@example.com'}],
+        'to': [
+          {'address': 'reader@example.com', 'displayName': 'Reader'},
+        ],
+        'cc': [
+          {'address': 'team@example.com'},
+        ],
+        'bcc': [
+          {'address': 'private@example.com'},
+        ],
       }, (_) => MailFolder.inbox);
       expect(email.recipients, ['reader@example.com']);
       expect(email.cc, ['team@example.com']);
