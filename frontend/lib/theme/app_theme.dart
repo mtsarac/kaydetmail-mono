@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Visual language: white/black background, black text, black accents, grey
 /// secondary text, light grey borders. Minimal and professional. A dark

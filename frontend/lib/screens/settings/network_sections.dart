@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'settings_widgets.dart';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../config/app_config.dart';

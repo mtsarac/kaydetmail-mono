@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../models/account_notification_settings.dart';
 import '../models/account_sync_scope.dart';

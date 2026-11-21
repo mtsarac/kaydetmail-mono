@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Keeps vertical scrolling and short flings from committing mail actions.
 class HorizontalMailDismissible extends StatefulWidget {
