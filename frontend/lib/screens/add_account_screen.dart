@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -204,12 +205,14 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                         : Text(l10nNow.connect),
                   ),
                   const SizedBox(height: 8),
-                  TextButton.icon(
-                    key: const Key('connect-directly'),
-                    onPressed: _connecting ? null : _connectDirectly,
-                    icon: const Icon(LucideIcons.plug, size: 18),
-                    label: Text(l10nNow.directAddEntry),
-                  ),
+                  // Browsers cannot open the raw TCP sockets IMAP/SMTP need.
+                  if (!kIsWeb)
+                    TextButton.icon(
+                      key: const Key('connect-directly'),
+                      onPressed: _connecting ? null : _connectDirectly,
+                      icon: const Icon(LucideIcons.plug, size: 18),
+                      label: Text(l10nNow.directAddEntry),
+                    ),
                   Text(
                     l10nNow.directAddEntryHint,
                     textAlign: TextAlign.center,

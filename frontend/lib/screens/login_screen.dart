@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -326,12 +327,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Text(l10nNow.continueLabel),
               ),
               const SizedBox(height: 8),
-              TextButton.icon(
-                key: const Key('connect-directly'),
-                onPressed: _connectDirectly,
-                icon: const Icon(LucideIcons.plug, size: 18),
-                label: Text(l10nNow.directAddEntry),
-              ),
+              // Browsers cannot open the raw TCP sockets IMAP/SMTP need.
+              if (!kIsWeb)
+                TextButton.icon(
+                  key: const Key('connect-directly'),
+                  onPressed: _connectDirectly,
+                  icon: const Icon(LucideIcons.plug, size: 18),
+                  label: Text(l10nNow.directAddEntry),
+                ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
