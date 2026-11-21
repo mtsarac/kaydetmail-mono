@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'compose_models.dart';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 
