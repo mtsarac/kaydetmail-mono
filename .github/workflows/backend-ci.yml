@@ -100,27 +100,48 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Build runtime image
-        run: docker build -f backend/Dockerfile --target runtime -t mailclient-api:ci backend
+      - name: Build runtime and migrator images
+        run: |
+          docker build -f backend/Dockerfile --target runtime -t mailclient-api:ci backend
+          docker build -f backend/Dockerfile --target migrator -t mailclient-migrator:ci backend
 
-      - name: Start container and smoke-test /health/live
+      - name: Start API with PostgreSQL and check readiness and stability
         run: |
           set -euo pipefail
           # Development bypasses the production-only ConnectionStrings/DataProtection/Jwt
-          # checks in StartupConfig.Validate — this smoke test only proves the image boots
-          # and serves a request, not that it's configured for a real deployment.
-          container=$(docker run -d -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Development mailclient-api:ci)
-          trap 'docker logs "$container"; docker rm -f "$container" >/dev/null' EXIT
+          # checks in StartupConfig.Validate; the database and migrations are real.
+          conn='Host=db;Port=5432;Database=kaydetmail-db;Username=postgres;Password=postgres;GSS Encryption Mode=Disable'
+          docker network create ci-net
+          db=$(docker run -d --network ci-net --network-alias db \
+            -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=kaydetmail-db postgres:18)
+          api=
+          trap 'docker logs "$api" 2>&1 | tail -n 100 || true; docker rm -f "$api" "$db" >/dev/null 2>&1 || true; docker network rm ci-net >/dev/null 2>&1 || true' EXIT
           for _ in $(seq 1 30); do
-            if curl --fail --silent http://localhost:8080/health/live; then
+            docker exec "$db" pg_isready -U postgres -d kaydetmail-db && break
+            sleep 1
+          done
+          docker run --rm --network ci-net mailclient-migrator:ci --connection "$conn"
+          api=$(docker run -d --network ci-net -p 8080:8080 \
+            -e ASPNETCORE_ENVIRONMENT=Development -e "ConnectionStrings__Default=$conn" mailclient-api:ci)
+          for _ in $(seq 1 30); do
+            if curl --fail --silent http://localhost:8080/health/ready; then
               echo
-              echo "Container is healthy."
-              exit 0
+              echo "API is ready."
+              break
             fi
             sleep 1
           done
-          echo "::error::Container never became healthy within 30s."
-          exit 1
+          curl --fail --silent http://localhost:8080/health/ready >/dev/null \
+            || { echo "::error::API never became ready within 30s."; exit 1; }
+          # A host-stopping background service failure shows up as an exited container.
+          for _ in $(seq 1 20); do
+            sleep 1
+            [ "$(docker inspect -f '{{.State.Running}}' "$api")" = "true" ] \
+              || { echo "::error::API container exited after becoming ready."; exit 1; }
+            curl --fail --silent http://localhost:8080/health/ready >/dev/null \
+              || { echo "::error::Readiness lost after startup."; exit 1; }
+          done
+          echo "API stayed up and ready for 20s."
 
   format:
     needs: changes
