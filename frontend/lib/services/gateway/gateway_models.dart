@@ -1,4 +1,4 @@
-part of '../api_mail_service.dart';
+import '../../models/email.dart';
 
 /// One row from `GET /api/conversations`: subject-level metadata only, no
 /// message bodies. [ApiConversation.messageIds] (via [getConversation]) plus
@@ -150,6 +150,7 @@ class BulkActionResult {
 
   final String mailId;
   final bool success;
+
   /// The remote move committed, but its destination UID is not known yet.
   final bool reconciliationPending;
 
@@ -157,16 +158,18 @@ class BulkActionResult {
   /// outcomes already acknowledged by an earlier chunk.
   final bool retryable;
 
-  bool get canRetry => retryable || switch (code) {
-    'mail_reconciliation_pending' ||
-    'mail_account_needs_reauthentication' ||
-    'mail_provider_unavailable' ||
-    'mail_move_failed' ||
-    'mail_delete_failed' ||
-    'network_unavailable' ||
-    'request_timeout' => true,
-    _ => false,
-  };
+  bool get canRetry =>
+      retryable ||
+      switch (code) {
+        'mail_reconciliation_pending' ||
+        'mail_account_needs_reauthentication' ||
+        'mail_provider_unavailable' ||
+        'mail_move_failed' ||
+        'mail_delete_failed' ||
+        'network_unavailable' ||
+        'request_timeout' => true,
+        _ => false,
+      };
 
   /// Failure error code (see the mail action error table), null on success.
   final String? code;
@@ -238,4 +241,70 @@ class MailListPage {
   final int page;
   final int pageSize;
   final int total;
+}
+
+/// What kind of thing changed behind a gateway without anyone asking.
+enum GatewayEventKind {
+  /// Stored mail of [GatewayEvent.folderId] changed (new, removed, flags).
+  mail,
+
+  /// The folder list changed.
+  folders,
+
+  /// The state of scheduled sends changed (one went out, one failed).
+  scheduledSends,
+
+  /// The mail server stopped being reachable.
+  offline,
+
+  /// The mail server is reachable again.
+  online,
+
+  /// The server refused the credentials; the user has to sign in again.
+  needsReauthentication,
+}
+
+/// A message that arrived while the app was running, with what a
+/// notification needs to describe it.
+class IncomingMail {
+  const IncomingMail({
+    required this.mailId,
+    required this.folderId,
+    required this.folderType,
+    required this.sender,
+    required this.subject,
+    required this.preview,
+  });
+
+  final String mailId;
+  final String folderId;
+
+  /// `Inbox`, `Sent`, … as in [ApiMailFolder.type].
+  final String folderType;
+  final String sender;
+  final String subject;
+
+  /// A line of the text, empty when the body has not been fetched.
+  final String preview;
+}
+
+/// A change a gateway noticed on its own (background sync, push, watch).
+/// Gateways that only answer requests never emit any.
+class GatewayEvent {
+  const GatewayEvent(
+    this.kind, {
+    this.folderId,
+    this.newMailIds = const [],
+    this.incoming = const [],
+  });
+
+  final GatewayEventKind kind;
+  final String? folderId;
+
+  /// Mail stored for the first time by the pass that raised this event.
+  final List<String> newMailIds;
+
+  /// The unread ones among them that are recent, described for a
+  /// notification (at most a handful).
+  final List<IncomingMail> incoming;
 }

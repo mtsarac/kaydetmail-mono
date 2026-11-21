@@ -98,7 +98,9 @@ void main() {
         'isDefault': true,
       };
       if (request.method == 'GET') {
-        return _jsonResponse({'items': [identity]});
+        return _jsonResponse({
+          'items': [identity],
+        });
       }
       if (request.method == 'DELETE') return http.Response('', 204);
       return _jsonResponse(identity);

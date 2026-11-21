@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../l10n/l10n.dart';
+import 'account_capabilities.dart';
 
 /// Which provider a connected account belongs to.
 ///
@@ -95,6 +96,7 @@ class MailAccount {
     this.status = MailAccountStatus.active,
     this.signature,
     this.quota,
+    this.mode = AccountMode.backend,
   });
 
   final String id;
@@ -107,6 +109,11 @@ class MailAccount {
   /// backend — every device signed into this account sees the same value.
   final String? signature;
   final AccountQuota? quota;
+
+  /// How this account reaches its mail server; fixed for its whole life.
+  final AccountMode mode;
+
+  bool get isDirect => mode == AccountMode.direct;
 
   String get label => displayName ?? email;
 
@@ -126,6 +133,7 @@ class MailAccount {
         ? this.signature
         : signature as String?,
     quota: identical(quota, _unset) ? this.quota : quota as AccountQuota?,
+    mode: mode,
   );
 }
 

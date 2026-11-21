@@ -237,27 +237,39 @@ void main() {
       expect(plan.cancelMailId, isNull);
     });
 
-    test('read elsewhere clears the notification; unrelated state does not', () {
-      Map<String, String> changed(String operation) => {
-        'type': 'mail_state_changed',
-        'accountId': 'acc-1',
-        'mailId': 'm-1',
-        'operation': operation,
-      };
-      expect(
-        backgroundPushPlan(changed('read'), systemRendered: true).cancelMailId,
-        'm-1',
-      );
-      expect(
-        backgroundPushPlan(changed('star'), systemRendered: false).cancelMailId,
-        isNull,
-      );
-    });
+    test(
+      'read elsewhere clears the notification; unrelated state does not',
+      () {
+        Map<String, String> changed(String operation) => {
+          'type': 'mail_state_changed',
+          'accountId': 'acc-1',
+          'mailId': 'm-1',
+          'operation': operation,
+        };
+        expect(
+          backgroundPushPlan(
+            changed('read'),
+            systemRendered: true,
+          ).cancelMailId,
+          'm-1',
+        );
+        expect(
+          backgroundPushPlan(
+            changed('star'),
+            systemRendered: false,
+          ).cancelMailId,
+          isNull,
+        );
+      },
+    );
   });
 
   test('iOS category exposes every action; reply opens the app', () {
     final details = MailNotifications.details('b');
-    expect(details.iOS?.categoryIdentifier, MailNotifications.category.identifier);
+    expect(
+      details.iOS?.categoryIdentifier,
+      MailNotifications.category.identifier,
+    );
     final actions = {
       for (final action in MailNotifications.category.actions)
         action.identifier: action.options,

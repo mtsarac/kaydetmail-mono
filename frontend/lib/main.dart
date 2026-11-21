@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 import 'app.dart';
 import 'config/app_config.dart';
+import 'services/direct/direct_background.dart';
 import 'services/firebase_monitoring.dart';
 import 'services/push_service.dart';
 import 'state/app_settings_controller.dart';
@@ -14,6 +17,10 @@ void main() async {
   // Android can recreate the process after reclaiming a background app.
   // Optional Firebase setup must not keep that return on an empty native
   // surface. Appearance is loaded, and the auth gate can render independently.
+  // Mail that direct accounts receive is announced from this device, so
+  // notifications must work without Firebase.
+  await PushService.initializeLocal();
+  unawaited(DirectBackground.sync());
   await FirebaseMonitoring.initialize();
   if (!AppConfig.pushEnabled || !PushService.isSupportedPlatform) return;
   // Best-effort: without Firebase config files this no-ops and the app runs

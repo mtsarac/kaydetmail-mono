@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../../models/account_capabilities.dart';
 import '../../models/email.dart';
 import '../../models/mail_account.dart';
 import '../../models/mail_folder.dart';
@@ -9,26 +10,42 @@ import '../../models/mail_template.dart';
 import '../../models/manual_contact.dart';
 import '../../models/scheduled_send.dart';
 import '../../services/api_auth_service.dart';
-import '../../services/api_mail_service.dart';
+import '../../services/gateway/gateway_models.dart';
+import '../../services/gateway/mail_gateway.dart';
 import '../../services/local_mail_flags_store.dart';
 
 /// Everything one connected mailbox needs to operate independently: its own
-/// authenticated HTTP session, its own folder/mail cache, and its own
-/// backend-backed pin/snooze/label/contact state plus local reply/forward flags.
+/// [MailGateway] (authenticated HTTP session for backend accounts, the
+/// device-side IMAP/SMTP engine for direct ones), its own folder/mail cache,
+/// and its own pin/snooze/label/contact state plus local reply/forward flags.
 /// Multiple accounts hold multiple [AccountSession]s side by side — connecting a
 /// second account never touches the first one's tokens, mail, or flags.
 class AccountSession {
   AccountSession({
-    required this.authService,
+    this.authService,
     required this.mailService,
     required this.account,
-  });
+    AccountCapabilities? capabilities,
+  }) : capabilities =
+           capabilities ??
+           (account.isDirect
+               ? const AccountCapabilities.direct()
+               : const AccountCapabilities.backend());
 
   MailAccount account;
-  final ApiAuthService authService;
-  final ApiMailService mailService;
+
+  /// Token/session service of a backend account; null for a direct account,
+  /// which has no backend session at all.
+  final ApiAuthService? authService;
+  final MailGateway mailService;
+
+  /// What this account can do; screens check this instead of the mode.
+  AccountCapabilities capabilities;
 
   bool offline = false;
+
+  /// Changes the gateway reports on its own (background sync, reachability).
+  StreamSubscription<GatewayEvent>? events;
   String? deviceId;
   LocalMailFlagsStore? flagsStore;
 

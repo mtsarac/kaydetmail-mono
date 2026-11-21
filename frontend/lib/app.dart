@@ -68,7 +68,7 @@ class _AuthGate extends StatefulWidget {
   State<_AuthGate> createState() => _AuthGateState();
 }
 
-class _AuthGateState extends State<_AuthGate> {
+class _AuthGateState extends State<_AuthGate> with WidgetsBindingObserver {
   bool? _loggedIn;
   StreamSubscription<({String mailId, bool reply})>? _mailTapSub;
   StreamSubscription<Email>? _draftFailureSub;
@@ -100,14 +100,23 @@ class _AuthGateState extends State<_AuthGate> {
       _notifyDraftSyncFailure,
     );
     _check();
-    if (AppConfig.pushEnabled) {
-      _mailTapSub = PushService.onMailTapped.listen(_openTappedMail);
-    }
+    // Taps come from push notifications and from the ones direct accounts
+    // raise on this device.
+    _mailTapSub = PushService.onMailTapped.listen(_openTappedMail);
     _composeRouter.start();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// Tells the repository whether the app is in front, so accounts that
+  /// watch their mailbox themselves can start and stop doing so.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    AppConfig.mailRepository.setAppActive(state == AppLifecycleState.resumed);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _draftFailureSub?.cancel();
     _mailTapSub?.cancel();
     _composeRouter.dispose();
@@ -213,6 +222,7 @@ class _AuthGateState extends State<_AuthGate> {
   void _setAuthenticated() {
     if (!mounted) return;
     setState(() => _loggedIn = true);
+    AppConfig.mailRepository.setAppActive(true);
     _rescheduleSync();
     if (AppConfig.pushEnabled) {
       unawaited(PushService.registerAuthenticatedDevice());

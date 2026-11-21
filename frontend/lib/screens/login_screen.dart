@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../config/app_config.dart';
+import '../models/mail_account.dart';
 import '../repositories/mail_repository.dart';
 import '../services/api_exception.dart';
 import '../services/session_store.dart';
@@ -10,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../widgets/mail_avatar.dart';
 import '../widgets/manual_mail_setup_dialog.dart';
 import '../widgets/server_address_dialog.dart';
+import 'add_direct_account_screen.dart';
 import '../l10n/l10n.dart';
 
 /// Two-step login: an email step that slides horizontally into a password
@@ -229,6 +232,18 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Connects the first mailbox straight to its mail servers, with no
+  /// KaydetMail server involved.
+  Future<void> _connectDirectly() async {
+    final account = await Navigator.of(context).push<MailAccount>(
+      MaterialPageRoute(
+        builder: (_) =>
+            AddDirectAccountScreen(initialEmail: _emailController.text.trim()),
+      ),
+    );
+    if (account != null && mounted) widget.onAuthenticated?.call();
+  }
+
   Widget _buildEmailStep() {
     return Center(
       child: SingleChildScrollView(
@@ -310,6 +325,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 key: const Key('continue-button'),
                 onPressed: _continue,
                 child: Text(l10nNow.continueLabel),
+              ),
+              const SizedBox(height: 8),
+              // Browsers cannot open the raw TCP sockets IMAP/SMTP need.
+              if (!kIsWeb)
+                TextButton.icon(
+                  key: const Key('connect-directly'),
+                  onPressed: _connectDirectly,
+                  icon: const Icon(LucideIcons.plug, size: 18),
+                  label: Text(l10nNow.directAddEntry),
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  l10nNow.directAddEntryHint,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.colors(context).secondaryText,
+                  ),
+                ),
               ),
             ],
           ),

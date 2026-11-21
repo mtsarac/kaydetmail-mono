@@ -58,6 +58,7 @@ class AccountSettingsScreen extends StatelessWidget {
             ),
             children: [
               _AccountHeader(account: account),
+              if (account.isDirect) const _DirectAccountNote(),
               AccountQuotaSection(accountId: accountId),
               SettingsSectionHeader(l10nNow.composing),
               SettingsCategoryTile(
@@ -121,13 +122,16 @@ class AccountSettingsScreen extends StatelessWidget {
                   (_) => TrustedSendersScreen(accountId: accountId),
                 ),
               ),
-              SettingsSectionHeader(l10nNow.security),
-              SettingsCategoryTile(
-                icon: LucideIcons.smartphone,
-                title: l10nNow.connectedDevices,
-                subtitle: l10nNow.devicesAndSessionsSignedIn,
-                page: (_) => [SessionsSection(accountId: accountId)],
-              ),
+              // Signed-in devices exist only where a server tracks them.
+              if (repo.capabilitiesOf(accountId).deviceSessions) ...[
+                SettingsSectionHeader(l10nNow.security),
+                SettingsCategoryTile(
+                  icon: LucideIcons.smartphone,
+                  title: l10nNow.connectedDevices,
+                  subtitle: l10nNow.devicesAndSessionsSignedIn,
+                  page: (_) => [SessionsSection(accountId: accountId)],
+                ),
+              ],
               SettingsSectionHeader(l10nNow.account),
               _AccountActions(account: account),
             ],
@@ -215,6 +219,49 @@ class _AccountHeader extends StatelessWidget {
   }
 }
 
+/// What a direct (server-less) account does differently, in plain words, so
+/// nobody finds out about a limit by running into it.
+class _DirectAccountNote extends StatelessWidget {
+  const _DirectAccountNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    Widget line(IconData icon, String text) => Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: colors.secondaryText),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 13, color: colors.secondaryText),
+            ),
+          ),
+        ],
+      ),
+    );
+    return Padding(
+      key: const Key('direct-account-note'),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10nNow.directAccountNoteTitle,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          line(LucideIcons.bell, l10nNow.directInfoNotifications),
+          line(LucideIcons.clock, l10nNow.directInfoScheduled),
+          line(LucideIcons.smartphone, l10nNow.directInfoLocalData),
+        ],
+      ),
+    );
+  }
+}
+
 /// Sign out of this device / remove the account. Removal deletes the
 /// mailbox connection on the server, so it asks first and is unavailable for
 /// the last account (use "Çıkış yap" then).
@@ -273,12 +320,18 @@ class _AccountActions extends StatelessWidget {
           key: const Key('sign-out-account'),
           leading: Icon(LucideIcons.logOut, size: 22, color: destructive),
           title: Text(l10nNow.signOutOnThisDevice),
-          subtitle: Text(l10nNow.theAccountStaysOnThe),
+          subtitle: Text(
+            account.isDirect
+                ? l10nNow.directRemoveSubtitle
+                : l10nNow.theAccountStaysOnThe,
+          ),
           onTap: () async {
             if (!await _confirm(
               context,
               title: l10nNow.signOut,
-              message: l10nNow.willBeSignedOutOn(account.email),
+              message: account.isDirect
+                  ? l10nNow.directWillBeRemoved(account.email)
+                  : l10nNow.willBeSignedOutOn(account.email),
               action: l10nNow.signOut2,
             )) {
               return;
@@ -296,12 +349,18 @@ class _AccountActions extends StatelessWidget {
             key: const Key('remove-account'),
             leading: Icon(LucideIcons.trash2, size: 22, color: destructive),
             title: Text(l10nNow.removeAccount),
-            subtitle: Text(l10nNow.deletesTheConnectionFromThe),
+            subtitle: Text(
+              account.isDirect
+                  ? l10nNow.directRemoveSubtitle
+                  : l10nNow.deletesTheConnectionFromThe,
+            ),
             onTap: () async {
               if (!await _confirm(
                 context,
                 title: l10nNow.removeAccount2,
-                message: l10nNow.willBeRemovedAndIts(account.email),
+                message: account.isDirect
+                    ? l10nNow.directWillBeRemoved(account.email)
+                    : l10nNow.willBeRemovedAndIts(account.email),
                 action: l10nNow.remove,
               )) {
                 return;

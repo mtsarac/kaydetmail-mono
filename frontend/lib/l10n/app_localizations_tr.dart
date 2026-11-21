@@ -2761,4 +2761,169 @@ class AppLocalizationsTr extends AppLocalizations {
   String conversationMessageCount(int count) {
     return '$count ileti';
   }
+
+  @override
+  String get directDnsFailure => 'Sunucu adı bulunamadı. Adresi kontrol edin.';
+
+  @override
+  String get directHostUnreachable =>
+      'Posta sunucusuna ulaşılamıyor. Sunucu adını ve bağlantı noktasını kontrol edin.';
+
+  @override
+  String get directTlsHandshakeFailed =>
+      'Güvenli bağlantı kurulamadı. Güvenlik türünü ve bağlantı noktasını kontrol edin.';
+
+  @override
+  String get directTlsCertificateInvalid =>
+      'Sunucunun sertifikası doğrulanamadı; bu bağlantı güvenli değil.';
+
+  @override
+  String directTlsHostMismatch(Object host) {
+    return 'Sunucunun sertifikası \"$host\" adına verilmiş. Sunucu adı olarak bunu deneyin.';
+  }
+
+  @override
+  String get directAuthFailed => 'Kullanıcı adı veya şifre kabul edilmedi.';
+
+  @override
+  String get directAuthRequiresAppPassword =>
+      'Bu sağlayıcı normal şifreyle girişe izin vermiyor. Bir uygulama şifresi oluşturup onu kullanın.';
+
+  @override
+  String get directAuthMethodUnsupported =>
+      'Sunucu desteklediğimiz bir giriş yöntemi sunmuyor.';
+
+  @override
+  String get directImapCommandFailed => 'Posta sunucusu isteği kabul etmedi.';
+
+  @override
+  String get directSmtpRejected => 'Gönderim sunucusu iletiyi kabul etmedi.';
+
+  @override
+  String get directSmtpSenderRejected =>
+      'Gönderim sunucusu bu gönderen adresini kabul etmedi.';
+
+  @override
+  String get directSmtpRecipientRejected =>
+      'Alıcı adresi gönderim sunucusu tarafından reddedildi.';
+
+  @override
+  String get directMessageTooLarge =>
+      'İleti, sunucunun kabul ettiği boyutu aşıyor.';
+
+  @override
+  String get directCapabilityMissing =>
+      'Posta sunucusu bu özelliği desteklemiyor.';
+
+  @override
+  String get directQuotaExceeded => 'Posta kutusu dolu.';
+
+  @override
+  String get directRateLimited =>
+      'Sunucu çok fazla istek aldı. Bir süre sonra yeniden denenecek.';
+
+  @override
+  String get directTemporaryFailure =>
+      'Posta sunucusu geçici olarak yanıt vermiyor. Biraz sonra tekrar deneyin.';
+
+  @override
+  String get directAddTitle => 'Doğrudan bağlan';
+
+  @override
+  String get directAddEntry => 'Sunucusuz bağlan (IMAP/SMTP)';
+
+  @override
+  String get directAddEntryHint =>
+      'E-postanız bu cihazdan doğrudan posta sunucunuzla konuşur.';
+
+  @override
+  String get directIntro =>
+      'Bu hesap KaydetMail sunucusu olmadan çalışır. Posta bu cihazda şifreli olarak saklanır ve doğrudan posta sunucunuzla eşitlenir.';
+
+  @override
+  String get directInfoNotifications =>
+      'Yeni e-posta bildirimleri uygulama açıkken gelir. Android\'de uygulama kapalıyken de yaklaşık 15 dakikada bir kontrol edilir (sistem geciktirebilir); iOS\'ta yalnızca uygulama açıkken ya da yeni arka plana alındığında.';
+
+  @override
+  String get directInfoScheduled =>
+      'Zamanlanmış iletiler, uygulama açıkken; Android\'de ayrıca yaklaşık 15 dakikalık periyodik kontrol sırasında; aksi halde bir sonraki açılışta gönderilir.';
+
+  @override
+  String get directInfoLocalData =>
+      'Etiketler, sabitlenen iletiler, hazır metinler ve imzalar yalnızca bu cihazda tutulur.';
+
+  @override
+  String get directDisplayName => 'Görünen ad (isteğe bağlı)';
+
+  @override
+  String get directServerSettings => 'Sunucu ayarları';
+
+  @override
+  String get directImapSection => 'Gelen posta sunucusu (IMAP)';
+
+  @override
+  String get directSmtpSection => 'Giden posta sunucusu (SMTP)';
+
+  @override
+  String get directHost => 'Sunucu adı';
+
+  @override
+  String get directPort => 'Bağlantı noktası';
+
+  @override
+  String get directSecurity => 'Güvenlik';
+
+  @override
+  String get directSecurityTls => 'SSL/TLS';
+
+  @override
+  String get directSecurityStartTls => 'STARTTLS';
+
+  @override
+  String get directUsername => 'Kullanıcı adı';
+
+  @override
+  String get directSeparateSmtpPassword => 'Giden sunucunun şifresi farklı';
+
+  @override
+  String get directSmtpPassword => 'Giden sunucu şifresi';
+
+  @override
+  String get directHostInvalid => 'Geçerli bir sunucu adı girin';
+
+  @override
+  String get directPortInvalid => '1 ile 65535 arasında bir değer girin';
+
+  @override
+  String get directDiscoveryGuessed =>
+      'Sunucu adlarını tahmin ettik. Bağlanmadan önce kontrol edin.';
+
+  @override
+  String get directDiscoveryPublished =>
+      'Ayarlar alan adınızın yayınladığı yapılandırmadan alındı.';
+
+  @override
+  String get directAppPasswordNote =>
+      'Bu sağlayıcı normal şifrenizi kabul etmez. Hesabınızın güvenlik ayarlarından bir uygulama şifresi oluşturup burada onu kullanın.';
+
+  @override
+  String directUseSuggestedHost(Object host) {
+    return '“$host” adını kullan';
+  }
+
+  @override
+  String get directAccountNoteTitle => 'Doğrudan bağlantı';
+
+  @override
+  String get directRemoveSubtitle =>
+      'Hesap ve bu cihazdaki posta silinir; sunucudaki postanıza dokunulmaz.';
+
+  @override
+  String directWillBeRemoved(Object email) {
+    return '$email bu cihazdan kaldırılacak. Posta sunucunuzdaki iletiler silinmez.';
+  }
+
+  @override
+  String get directScheduledBanner =>
+      'Doğrudan bağlı hesaplardan zamanlanan iletiler, uygulama açıkken; Android\'de ayrıca yaklaşık 15 dakikalık periyodik kontrol sırasında; aksi halde bir sonraki açılışta gönderilir.';
 }

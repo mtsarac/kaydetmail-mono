@@ -1371,5 +1371,66 @@
         "type": "int"
       }
     }
-  }
+  },
+  "directDnsFailure": "Sunucu adı bulunamadı. Adresi kontrol edin.",
+  "directHostUnreachable": "Posta sunucusuna ulaşılamıyor. Sunucu adını ve bağlantı noktasını kontrol edin.",
+  "directTlsHandshakeFailed": "Güvenli bağlantı kurulamadı. Güvenlik türünü ve bağlantı noktasını kontrol edin.",
+  "directTlsCertificateInvalid": "Sunucunun sertifikası doğrulanamadı; bu bağlantı güvenli değil.",
+  "directTlsHostMismatch": "Sunucunun sertifikası \"{host}\" adına verilmiş. Sunucu adı olarak bunu deneyin.",
+  "@directTlsHostMismatch": {
+    "placeholders": {
+      "host": {}
+    }
+  },
+  "directAuthFailed": "Kullanıcı adı veya şifre kabul edilmedi.",
+  "directAuthRequiresAppPassword": "Bu sağlayıcı normal şifreyle girişe izin vermiyor. Bir uygulama şifresi oluşturup onu kullanın.",
+  "directAuthMethodUnsupported": "Sunucu desteklediğimiz bir giriş yöntemi sunmuyor.",
+  "directImapCommandFailed": "Posta sunucusu isteği kabul etmedi.",
+  "directSmtpRejected": "Gönderim sunucusu iletiyi kabul etmedi.",
+  "directSmtpSenderRejected": "Gönderim sunucusu bu gönderen adresini kabul etmedi.",
+  "directSmtpRecipientRejected": "Alıcı adresi gönderim sunucusu tarafından reddedildi.",
+  "directMessageTooLarge": "İleti, sunucunun kabul ettiği boyutu aşıyor.",
+  "directCapabilityMissing": "Posta sunucusu bu özelliği desteklemiyor.",
+  "directQuotaExceeded": "Posta kutusu dolu.",
+  "directRateLimited": "Sunucu çok fazla istek aldı. Bir süre sonra yeniden denenecek.",
+  "directTemporaryFailure": "Posta sunucusu geçici olarak yanıt vermiyor. Biraz sonra tekrar deneyin.",
+  "directAddTitle": "Doğrudan bağlan",
+  "directAddEntry": "Sunucusuz bağlan (IMAP/SMTP)",
+  "directAddEntryHint": "E-postanız bu cihazdan doğrudan posta sunucunuzla konuşur.",
+  "directIntro": "Bu hesap KaydetMail sunucusu olmadan çalışır. Posta bu cihazda şifreli olarak saklanır ve doğrudan posta sunucunuzla eşitlenir.",
+  "directInfoNotifications": "Yeni e-posta bildirimleri uygulama açıkken gelir. Android'de uygulama kapalıyken de yaklaşık 15 dakikada bir kontrol edilir (sistem geciktirebilir); iOS'ta yalnızca uygulama açıkken ya da yeni arka plana alındığında.",
+  "directInfoScheduled": "Zamanlanmış iletiler, uygulama açıkken; Android'de ayrıca yaklaşık 15 dakikalık periyodik kontrol sırasında; aksi halde bir sonraki açılışta gönderilir.",
+  "directInfoLocalData": "Etiketler, sabitlenen iletiler, hazır metinler ve imzalar yalnızca bu cihazda tutulur.",
+  "directDisplayName": "Görünen ad (isteğe bağlı)",
+  "directServerSettings": "Sunucu ayarları",
+  "directImapSection": "Gelen posta sunucusu (IMAP)",
+  "directSmtpSection": "Giden posta sunucusu (SMTP)",
+  "directHost": "Sunucu adı",
+  "directPort": "Bağlantı noktası",
+  "directSecurity": "Güvenlik",
+  "directSecurityTls": "SSL/TLS",
+  "directSecurityStartTls": "STARTTLS",
+  "directUsername": "Kullanıcı adı",
+  "directSeparateSmtpPassword": "Giden sunucunun şifresi farklı",
+  "directSmtpPassword": "Giden sunucu şifresi",
+  "directHostInvalid": "Geçerli bir sunucu adı girin",
+  "directPortInvalid": "1 ile 65535 arasında bir değer girin",
+  "directDiscoveryGuessed": "Sunucu adlarını tahmin ettik. Bağlanmadan önce kontrol edin.",
+  "directDiscoveryPublished": "Ayarlar alan adınızın yayınladığı yapılandırmadan alındı.",
+  "directAppPasswordNote": "Bu sağlayıcı normal şifrenizi kabul etmez. Hesabınızın güvenlik ayarlarından bir uygulama şifresi oluşturup burada onu kullanın.",
+  "directUseSuggestedHost": "“{host}” adını kullan",
+  "@directUseSuggestedHost": {
+    "placeholders": {
+      "host": {}
+    }
+  },
+  "directAccountNoteTitle": "Doğrudan bağlantı",
+  "directRemoveSubtitle": "Hesap ve bu cihazdaki posta silinir; sunucudaki postanıza dokunulmaz.",
+  "directWillBeRemoved": "{email} bu cihazdan kaldırılacak. Posta sunucunuzdaki iletiler silinmez.",
+  "@directWillBeRemoved": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "directScheduledBanner": "Doğrudan bağlı hesaplardan zamanlanan iletiler, uygulama açıkken; Android'de ayrıca yaklaşık 15 dakikalık periyodik kontrol sırasında; aksi halde bir sonraki açılışta gönderilir."
 }

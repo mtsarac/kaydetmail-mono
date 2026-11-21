@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../models/account_capabilities.dart';
 import '../models/account_notification_settings.dart';
 import '../models/account_sync_scope.dart';
 import '../models/compose_prefill.dart';
@@ -27,6 +28,8 @@ import '../models/scheduled_send_detail.dart';
 import '../models/mail_signature.dart';
 import '../models/trusted_sender.dart';
 import '../models/attachment_download_state.dart';
+import '../services/direct/direct_account_setup.dart';
+import '../services/direct/settings_discovery.dart';
 
 /// Server connection settings entered on the login screen.
 ///
@@ -149,6 +152,31 @@ abstract class MailRepository extends ChangeNotifier {
 
   /// Sending accounts for the Compose "Kimden" picker.
   List<MailAccount> get accounts;
+
+  /// What [accountId] can do. Screens use this to hide or label features a
+  /// connection kind cannot offer (device sessions, guaranteed scheduled
+  /// send, …) instead of branching on how the account connects. Unknown
+  /// accounts get the backend profile, the long-standing default.
+  AccountCapabilities capabilitiesOf(String accountId) =>
+      const AccountCapabilities.backend();
+
+  /// Whether the app is in front of the user. Accounts that watch their own
+  /// mailbox (direct accounts) keep a live connection while it is, and raise
+  /// notifications for mail that arrives while it is not.
+  void setAppActive(bool active) {}
+
+  /// Connects a mailbox straight to its IMAP/SMTP servers from this device,
+  /// with no KaydetMail backend in between. The servers are tried before
+  /// anything is stored; failures arrive as [ApiException]s with stable codes
+  /// (`auth_failed`, `tls_certificate_invalid`, …).
+  Future<MailAccount> connectDirectAccount(DirectAccountSetup setup) =>
+      throw UnsupportedError('Direct accounts are not available');
+
+  /// Suggested server settings for [email] (known providers, the domain's
+  /// published configuration, or the `mail.<domain>` convention); null when
+  /// the address is unusable.
+  Future<DiscoveredSettings?> discoverDirectSettings(String email) async =>
+      null;
 
   /// Sets or clears (`null`/blank) [accountId]'s signature, synced to the
   /// backend so every device signed into that account sees it. Throws

@@ -27,7 +27,10 @@ class _Repository extends MailRepository {
   ) => state;
 
   @override
-  Future<File> ensureAttachmentFile(String mailId, Attachment attachment) async {
+  Future<File> ensureAttachmentFile(
+    String mailId,
+    Attachment attachment,
+  ) async {
     if (ensureError case final error?) throw error;
     return completion.future;
   }
@@ -86,7 +89,11 @@ void main() {
       const MaterialApp(
         home: AttachmentPreviewScreen(
           mailId: 'mail',
-          attachment: Attachment(id: 'attachment', name: 'memo.txt', sizeBytes: 100),
+          attachment: Attachment(
+            id: 'attachment',
+            name: 'memo.txt',
+            sizeBytes: 100,
+          ),
         ),
       ),
     );

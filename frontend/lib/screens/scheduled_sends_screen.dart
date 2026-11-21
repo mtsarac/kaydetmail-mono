@@ -94,33 +94,79 @@ class _ScheduledSendsScreenState extends State<ScheduledSendsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(l10nNow.scheduledSends)),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListenableBuilder(
-          listenable: _repo,
-          builder: (context, _) {
-            if (_loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (_error != null) {
-              return _ErrorState(error: _error!, onRetry: _load);
-            }
-            final items = _repo.getScheduledSends();
-            if (items.isEmpty) {
-              return _EmptyState(onRetry: _load);
-            }
-            return ListView.separated(
-              padding: withBottomInset(
-                context,
-                const EdgeInsets.symmetric(vertical: 8),
-              ),
-              itemCount: items.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, i) =>
-                  _ScheduledRow(item: items[i], onOpen: () => _open(items[i])),
-            );
-          },
-        ),
+      body: Column(
+        children: [
+          ListenableBuilder(
+            listenable: _repo,
+            builder: (context, _) {
+              // A server keeps the clock for backend accounts; for direct
+              // ones this device does, and that has limits worth stating.
+              final needsNote = _repo.accounts.any(
+                (a) => !_repo.capabilitiesOf(a.id).guaranteedScheduledSend,
+              );
+              return needsNote
+                  ? _DeviceClockNote(key: const Key('direct-scheduled-note'))
+                  : const SizedBox.shrink();
+            },
+          ),
+          Expanded(child: _list(context)),
+        ],
+      ),
+    );
+  }
+
+  Widget _list(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListenableBuilder(
+        listenable: _repo,
+        builder: (context, _) {
+          if (_loading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (_error != null) {
+            return _ErrorState(error: _error!, onRetry: _load);
+          }
+          final items = _repo.getScheduledSends();
+          if (items.isEmpty) {
+            return _EmptyState(onRetry: _load);
+          }
+          return ListView.separated(
+            padding: withBottomInset(
+              context,
+              const EdgeInsets.symmetric(vertical: 8),
+            ),
+            itemCount: items.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, i) =>
+                _ScheduledRow(item: items[i], onOpen: () => _open(items[i])),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _DeviceClockNote extends StatelessWidget {
+  const _DeviceClockNote({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(LucideIcons.info, size: 16, color: colors.secondaryText),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l10nNow.directScheduledBanner,
+              style: TextStyle(fontSize: 13, color: colors.secondaryText),
+            ),
+          ),
+        ],
       ),
     );
   }

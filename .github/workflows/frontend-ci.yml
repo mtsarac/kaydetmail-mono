@@ -22,6 +22,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # A real mail server for the tests of the direct (IMAP/SMTP) engine,
+    # same image and credentials as the backend's tests.
+    services:
+      greenmail:
+        image: greenmail/standalone:2.1.8
+        env:
+          GREENMAIL_OPTS: -Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=test@localhost:test123,gateway@localhost:test123
+        ports:
+          - 3143:3143
+          - 3025:3025
     steps:
       - uses: actions/checkout@v7
 
@@ -39,6 +49,8 @@ jobs:
         run: flutter analyze
 
       - name: flutter test
+        env:
+          MAILCLIENT_TEST_GREENMAIL: "1"
         run: flutter test
 
   linux:

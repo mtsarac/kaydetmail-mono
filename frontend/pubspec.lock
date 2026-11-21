@@ -33,6 +33,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.7.0"
+  asn1lib:
+    dependency: transitive
+    description:
+      name: asn1lib
+      sha256: "9a8f69025044eb466b9b60ef3bc3ac99b4dc6c158ae9c56d25eeccf5bc56d024"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.6.5"
   async:
     dependency: transitive
     description:
@@ -49,6 +57,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.9"
+  basic_utils:
+    dependency: "direct main"
+    description:
+      name: basic_utils
+      sha256: "548047bef0b3b697be19fa62f46de54d99c9019a69fb7db92c69e19d87f633c7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.8.2"
   battery_plus:
     dependency: "direct main"
     description:
@@ -137,6 +153,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  convert:
+    dependency: transitive
+    description:
+      name: convert
+      sha256: b30acd5944035672bc15c6b7a8b47d773e41e2f17de064350988c5d02adb1c68
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.2"
   cross_file:
     dependency: transitive
     description:
@@ -201,8 +225,32 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.4.1"
-  fake_async:
+  encrypter_plus:
     dependency: transitive
+    description:
+      name: encrypter_plus
+      sha256: "6f6f3c73e26058af4fd138369a928ccae667e45d254cf6ded6301a2d99551a67"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.0"
+  enough_convert:
+    dependency: transitive
+    description:
+      name: enough_convert
+      sha256: "65bff24436f4da878435e80ba24a6f762870751a6f5fd4ea51cdec232d90a936"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.7.1"
+  enough_mail_plus:
+    dependency: "direct main"
+    description:
+      name: enough_mail_plus
+      sha256: "9ee046af37f94e24b487dc8380b9a06d55252739cc7d7df4ec5b05a268252f47"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.0"
+  fake_async:
+    dependency: "direct dev"
     description:
       name: fake_async
       sha256: "5368f224a74523e8d2e7399ea1638b37aecfca824a3cc4dfdf77bf1fa905ac44"
@@ -788,6 +836,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  json_annotation:
+    dependency: transitive
+    description:
+      name: json_annotation
+      sha256: "2a743920d81b7910627f68ee2c9ac1fc0bfee32b9fc3403587d7c6791ca12f80"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.12.0"
   leak_tracker:
     dependency: transitive
     description:
@@ -1116,6 +1172,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
+  pointycastle:
+    dependency: transitive
+    description:
+      name: pointycastle
+      sha256: "92aa3841d083cc4b0f4709b5c74fd6409a3e6ba833ffc7dc6a8fee096366acf5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
   posix:
     dependency: transitive
     description:
@@ -1553,6 +1617,54 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  workmanager:
+    dependency: "direct main"
+    description:
+      name: workmanager
+      sha256: "96b09a4a852ec487d29371f27031dab80ce2e260911e2dbe0f904951e22a3956"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.10.10"
+  workmanager_android:
+    dependency: transitive
+    description:
+      name: workmanager_android
+      sha256: ffe8aa061885370c9363f7ae2d2196d31855217c58e7b15899d915d36c768c4a
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.10.9"
+  workmanager_apple:
+    dependency: transitive
+    description:
+      name: workmanager_apple
+      sha256: "9e0ca0b857df986b37ca964ffa3b21990e1bc0f7935356a9706b47e5b71a7524"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.11"
+  workmanager_linux:
+    dependency: transitive
+    description:
+      name: workmanager_linux
+      sha256: "7d8520e1103b910a43d8bafe37ec2415f4c7c148afcb1eee0ec73ae67b4cdd22"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.1+1"
+  workmanager_platform_interface:
+    dependency: transitive
+    description:
+      name: workmanager_platform_interface
+      sha256: a1022dca1284d64ba8bbe046edc9089cc5158b3d0e2cf9f68c7cde2fbf89746c
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.10.5"
+  workmanager_web:
+    dependency: transitive
+    description:
+      name: workmanager_web
+      sha256: "2ac481ade599bdd957ee2891be09a0c34be87923a2c3ca4dfe36add6fc735ffd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.0"
   xdg_directories:
     dependency: transitive
     description:

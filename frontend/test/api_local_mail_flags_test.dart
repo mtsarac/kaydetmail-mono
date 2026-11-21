@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:kaydetmail/services/api_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -21,29 +22,33 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   group('pin/reply/forward', () {
-    test('pinned mail floats to the top, newest-first inside each group', () async {
-      final mailService = _RecordingMailService(
-        folders: [_folder('folder-inbox', 'Inbox')],
-        pagesByFolderId: {
-          'folder-inbox': _page([
-            _mailJson('newest', receivedAt: '2026-09-20T10:00:00Z'),
-            _mailJson('middle', receivedAt: '2026-09-19T10:00:00Z'),
-            _mailJson('old-a', receivedAt: '2026-09-10T10:00:00Z'),
-            _mailJson('old-b', receivedAt: '2026-09-09T10:00:00Z'),
-          ]),
-        },
-      );
-      final repo = await _repositoryWithLoadedInbox(mailService);
-      ids() => repo.getEmailsInFolder(MailFolder.inbox).map((e) => e.id).toList();
+    test(
+      'pinned mail floats to the top, newest-first inside each group',
+      () async {
+        final mailService = _RecordingMailService(
+          folders: [_folder('folder-inbox', 'Inbox')],
+          pagesByFolderId: {
+            'folder-inbox': _page([
+              _mailJson('newest', receivedAt: '2026-09-20T10:00:00Z'),
+              _mailJson('middle', receivedAt: '2026-09-19T10:00:00Z'),
+              _mailJson('old-a', receivedAt: '2026-09-10T10:00:00Z'),
+              _mailJson('old-b', receivedAt: '2026-09-09T10:00:00Z'),
+            ]),
+          },
+        );
+        final repo = await _repositoryWithLoadedInbox(mailService);
+        ids() =>
+            repo.getEmailsInFolder(MailFolder.inbox).map((e) => e.id).toList();
 
-      expect(ids(), ['newest', 'middle', 'old-a', 'old-b']);
+        expect(ids(), ['newest', 'middle', 'old-a', 'old-b']);
 
-      await repo.setPinned(['old-b', 'old-a'], true);
-      expect(ids(), ['old-a', 'old-b', 'newest', 'middle']);
+        await repo.setPinned(['old-b', 'old-a'], true);
+        expect(ids(), ['old-a', 'old-b', 'newest', 'middle']);
 
-      await repo.setPinned(['old-a'], false);
-      expect(ids(), ['old-b', 'newest', 'middle', 'old-a']);
-    });
+        await repo.setPinned(['old-a'], false);
+        expect(ids(), ['old-b', 'newest', 'middle', 'old-a']);
+      },
+    );
 
     test(
       'setPinned writes through to the backend and caps at maxPinnedMails',
@@ -199,36 +204,33 @@ void main() {
     });
   });
   group('starred virtual folder', () {
-    test(
-      'shows only starred mail while pinned mail floats to the top of its folder',
-      () async {
-        final mailService = _RecordingMailService(
-          folders: [
-            _folder('folder-inbox', 'Inbox'),
-            _folder('folder-archive', 'Archive'),
-          ],
-          pagesByFolderId: {
-            'folder-inbox': _page([
-              _mailJson('mail-old', receivedAt: '2026-01-01T00:00:00Z'),
-              _mailJson('mail-new', receivedAt: '2026-06-01T00:00:00Z'),
-            ]),
-            'folder-archive': _page([_mailJson('mail-archived')]),
-          },
-        );
-        final repo = await _repositoryWithLoadedInbox(mailService);
-        await repo.loadMoreEmails(MailFolder.archive);
+    test('shows only starred mail while pinned mail floats to the top of its folder', () async {
+      final mailService = _RecordingMailService(
+        folders: [
+          _folder('folder-inbox', 'Inbox'),
+          _folder('folder-archive', 'Archive'),
+        ],
+        pagesByFolderId: {
+          'folder-inbox': _page([
+            _mailJson('mail-old', receivedAt: '2026-01-01T00:00:00Z'),
+            _mailJson('mail-new', receivedAt: '2026-06-01T00:00:00Z'),
+          ]),
+          'folder-archive': _page([_mailJson('mail-archived')]),
+        },
+      );
+      final repo = await _repositoryWithLoadedInbox(mailService);
+      await repo.loadMoreEmails(MailFolder.archive);
 
-        await repo.setPinned(['mail-old'], true);
-        await repo.setStarred(['mail-archived'], true);
+      await repo.setPinned(['mail-old'], true);
+      await repo.setStarred(['mail-archived'], true);
 
-        final starred = repo.getEmailsInFolder(MailFolder.starred);
-        expect(starred.map((e) => e.id), ['mail-archived']);
+      final starred = repo.getEmailsInFolder(MailFolder.starred);
+      expect(starred.map((e) => e.id), ['mail-archived']);
 
-        final inbox = repo.getEmailsInFolder(MailFolder.inbox);
-        // A pinned mail leads the folder even though it is the older one.
-        expect(inbox.map((e) => e.id), ['mail-old', 'mail-new']);
-      },
-    );
+      final inbox = repo.getEmailsInFolder(MailFolder.inbox);
+      // A pinned mail leads the folder even though it is the older one.
+      expect(inbox.map((e) => e.id), ['mail-old', 'mail-new']);
+    });
 
     test('loads every starred page, not only first 100 mails', () async {
       final mailService = _RecordingMailService(
@@ -269,39 +271,48 @@ void main() {
       await repo.removeLabelsFromEmails(['mail-1'], [labels.first.id]);
       expect(mail().labelIds, isEmpty);
     });
-    test('label add appears before response and rolls back on failure', () async {
-      final service = _RecordingMailService(
-        folders: [_folder('folder-inbox', 'Inbox')],
-        pagesByFolderId: {'folder-inbox': _page([_mailJson('mail-1')])},
-      );
-      final repo = await _repositoryWithLoadedInbox(service);
-      final label = repo.getLabelsForAccount('account-1').first.id;
-      final response = Completer<void>();
-      service.assignResponse = response;
-      final operation = repo.addLabelsToEmails(['mail-1'], [label]);
-      expect(repo.getAllEmails().single.labelIds, contains(label));
-      response.completeError(StateError('assignment rejected'));
-      await expectLater(operation, throwsStateError);
-      expect(repo.getAllEmails().single.labelIds, isNot(contains(label)));
-    });
+    test(
+      'label add appears before response and rolls back on failure',
+      () async {
+        final service = _RecordingMailService(
+          folders: [_folder('folder-inbox', 'Inbox')],
+          pagesByFolderId: {
+            'folder-inbox': _page([_mailJson('mail-1')]),
+          },
+        );
+        final repo = await _repositoryWithLoadedInbox(service);
+        final label = repo.getLabelsForAccount('account-1').first.id;
+        final response = Completer<void>();
+        service.assignResponse = response;
+        final operation = repo.addLabelsToEmails(['mail-1'], [label]);
+        expect(repo.getAllEmails().single.labelIds, contains(label));
+        response.completeError(StateError('assignment rejected'));
+        await expectLater(operation, throwsStateError);
+        expect(repo.getAllEmails().single.labelIds, isNot(contains(label)));
+      },
+    );
 
-    test('label removal appears before response and rolls back on failure', () async {
-      final service = _RecordingMailService(
-        folders: [_folder('folder-inbox', 'Inbox')],
-        pagesByFolderId: {'folder-inbox': _page([_mailJson('mail-1')])},
-      );
-      final repo = await _repositoryWithLoadedInbox(service);
-      final label = repo.getLabelsForAccount('account-1').first.id;
-      await repo.addLabelsToEmails(['mail-1'], [label]);
-      final response = Completer<void>();
-      service.unassignResponse = response;
-      final operation = repo.removeLabelsFromEmails(['mail-1'], [label]);
-      expect(repo.getAllEmails().single.labelIds, isNot(contains(label)));
-      response.completeError(StateError('removal rejected'));
-      await expectLater(operation, throwsStateError);
-      expect(repo.getAllEmails().single.labelIds, contains(label));
-    });
-
+    test(
+      'label removal appears before response and rolls back on failure',
+      () async {
+        final service = _RecordingMailService(
+          folders: [_folder('folder-inbox', 'Inbox')],
+          pagesByFolderId: {
+            'folder-inbox': _page([_mailJson('mail-1')]),
+          },
+        );
+        final repo = await _repositoryWithLoadedInbox(service);
+        final label = repo.getLabelsForAccount('account-1').first.id;
+        await repo.addLabelsToEmails(['mail-1'], [label]);
+        final response = Completer<void>();
+        service.unassignResponse = response;
+        final operation = repo.removeLabelsFromEmails(['mail-1'], [label]);
+        expect(repo.getAllEmails().single.labelIds, isNot(contains(label)));
+        response.completeError(StateError('removal rejected'));
+        await expectLater(operation, throwsStateError);
+        expect(repo.getAllEmails().single.labelIds, contains(label));
+      },
+    );
   });
 
   group('lastSyncedAt', () {

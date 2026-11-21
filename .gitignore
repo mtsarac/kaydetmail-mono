@@ -14,3 +14,6 @@ docs/test-cred.md
 .idea/
 .run/
 .worktrees/
+
+# Real mailbox credentials for manual testing
+docs/test-cred.md

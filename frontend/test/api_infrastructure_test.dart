@@ -184,21 +184,28 @@ void main() {
       expect(exception.userMessage, 'Şifre yanlış.');
     });
 
-    test('Given a non-JSON error page When parsed Then the raw body is not kept', () {
-      final exception = ApiException.fromResponse(
-        502,
-        '<html>upstream connect error at 10.0.3.7:5071</html>',
-      );
+    test(
+      'Given a non-JSON error page When parsed Then the raw body is not kept',
+      () {
+        final exception = ApiException.fromResponse(
+          502,
+          '<html>upstream connect error at 10.0.3.7:5071</html>',
+        );
 
-      expect(exception.status, 502);
-      expect(exception.title, isNull);
-      expect(exception.details, isEmpty);
-    });
+        expect(exception.status, 502);
+        expect(exception.title, isNull);
+        expect(exception.details, isEmpty);
+      },
+    );
 
     test('Given wrongly typed Problem Details fields When parsed Then it does not throw', () {
       final exception = ApiException.fromResponse(
         400,
-        jsonEncode({'code': 42, 'title': ['x'], 'correlationId': {}}),
+        jsonEncode({
+          'code': 42,
+          'title': ['x'],
+          'correlationId': {},
+        }),
       );
 
       expect(exception.code, isNull);
@@ -220,30 +227,48 @@ void main() {
         'Bu adda bir klasör zaten var.',
       );
       expect(
-        const ApiException(status: 409, code: 'mail_folder_not_empty').userMessage,
+        const ApiException(
+          status: 409,
+          code: 'mail_folder_not_empty',
+        ).userMessage,
         'Klasör boş değil. Önce içindeki postaları taşıyın veya silin.',
       );
       expect(
-        const ApiException(status: 409, code: 'mail_folder_has_children').userMessage,
+        const ApiException(
+          status: 409,
+          code: 'mail_folder_has_children',
+        ).userMessage,
         'Önce alt klasörleri silin.',
       );
       expect(
-        const ApiException(status: 403, code: 'mail_folder_protected').userMessage,
+        const ApiException(
+          status: 403,
+          code: 'mail_folder_protected',
+        ).userMessage,
         'Bu klasör değiştirilemez.',
       );
       expect(
-        const ApiException(status: 422, code: 'invalid_folder_name').userMessage,
+        const ApiException(
+          status: 422,
+          code: 'invalid_folder_name',
+        ).userMessage,
         'Klasör adı geçersiz.',
       );
       expect(
-        const ApiException(status: 422, code: 'mail_folder_rejected').userMessage,
+        const ApiException(
+          status: 422,
+          code: 'mail_folder_rejected',
+        ).userMessage,
         'Posta sunucusu bu klasör adını kabul etmedi.',
       );
     });
 
     test('Given idempotency conflict When formatted Then unsafe retry is not suggested', () {
       expect(
-        const ApiException(status: 409, code: 'idempotency_conflict').userMessage,
+        const ApiException(
+          status: 409,
+          code: 'idempotency_conflict',
+        ).userMessage,
         'Gönderim isteği farklı içerikle daha önce kullanıldı. Yeni gönderim oluşturun.',
       );
     });
