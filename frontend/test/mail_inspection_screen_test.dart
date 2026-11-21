@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kaydetmail/models/mail_header_entry.dart';
 import 'package:kaydetmail/models/mail_security.dart';

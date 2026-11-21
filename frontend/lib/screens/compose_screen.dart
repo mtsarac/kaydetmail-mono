@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+// quill's toolbar API is typed against Flutter's own (deprecated) material ButtonStyle.
+// ignore: deprecated_member_use
+import 'package:flutter/material.dart' as flutter_material show IconButton;
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -639,7 +642,7 @@ class _ComposeScreenState extends _ComposeStateBase
             base: quill.QuillToolbarBaseButtonOptions(
               iconTheme: quill.QuillIconTheme(
                 iconButtonSelectedData: quill.IconButtonData(
-                  style: IconButton.styleFrom(
+                  style: flutter_material.IconButton.styleFrom(
                     backgroundColor: scheme.primary,
                     foregroundColor: scheme.onPrimary,
                   ),
